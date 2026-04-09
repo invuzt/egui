@@ -22,8 +22,8 @@ jobs:
       - name: Build Rust Lib
         run: |
           mkdir -p app/src/main/jniLibs/arm64-v8a
-          # Gunakan --all-features untuk memastikan android-native-activity aktif
-          cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release --all-features
+          # PAKSA TARGET ANDROID SAAT COMPILING
+          cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release --features eframe/android-native-activity
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
       - name: Build APK with Gradle
@@ -33,5 +33,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: agdk-egui-apk
+          name: odfiz-egui-apk
           path: app/build/outputs/apk/debug/*.apk
