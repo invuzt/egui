@@ -1,29 +1,16 @@
 use eframe::egui;
 use crate::state::SharedState;
-use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Paragraph, List, ListItem};
-use egui_ratatui::RataguiBackend;
-use soft_ratatui::embedded_graphics_unicodefonts::mono_8x13_atlas;
-use soft_ratatui::{EmbeddedGraphics, SoftBackend};
 
 pub struct OdfizApp {
     pub state: SharedState,
     pub current_page: String,
-    // Gunakan full path untuk menghindari ambiguitas tipe data
-    pub terminal: Terminal<RataguiBackend<EmbeddedGraphics>>,
 }
 
 impl OdfizApp {
     pub fn new(state: SharedState) -> Self {
-        let font = mono_8x13_atlas();
-        let soft_backend = SoftBackend::<EmbeddedGraphics>::new(45, 60, font, None, None);
-        let backend = RataguiBackend::new("odfiz_term", soft_backend);
-        let terminal = Terminal::new(backend).expect("Gagal inisialisasi terminal");
-
         Self { 
             state, 
-            current_page: "Home".to_string(), 
-            terminal 
+            current_page: "Home".to_string() 
         }
     }
 }
@@ -38,76 +25,78 @@ impl eframe::App for OdfizApp {
             dark_mode = data.dark_mode;
         }
 
-        ctx.set_visuals(if dark_mode { egui::Visuals::dark() } else { egui::Visuals::light() });
+        // Paksa tema gelap agar aura terminal terasa
+        ctx.set_visuals(egui::Visuals::dark());
 
+        // --- SIDEBAR (Ramping & Rata Kiri) ---
         if show_panel {
-            egui::SidePanel::left("main_sidebar").default_width(120.0).show(ctx, |ui| {
+            egui::SidePanel::left("sidebar").default_width(110.0).resizable(false).show(ctx, |ui| {
                 ui.add_space(45.0);
-                if ui.selectable_label(self.current_page == "Home", "🏠  Home").clicked() { self.current_page = "Home".to_string(); }
-                if ui.selectable_label(self.current_page == "Settings", "⚙  Settings").clicked() { self.current_page = "Settings".to_string(); }
+                ui.vertical_centered_justified(|ui| {
+                    if ui.selectable_label(self.current_page == "Home", "🏠 Home").clicked() { self.current_page = "Home".to_string(); }
+                    ui.add_space(10.0);
+                    if ui.selectable_label(self.current_page == "Settings", "⚙ Settings").clicked() { self.current_page = "Settings".to_string(); }
+                });
             });
         }
 
+        // --- MAIN PANEL ---
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(45.0);
+            
             ui.horizontal(|ui| {
                 let toggle_icon = if show_panel { "◀" } else { "☰" };
                 if ui.button(toggle_icon).clicked() {
                     if let Ok(mut data) = self.state.try_lock() { data.show_panel = !data.show_panel; }
                 }
-                ui.heading(format!("ODFIZ TUI - {}", self.current_page));
+                ui.heading("ODFIZ ENGINE v1.0");
             });
             ui.separator();
 
             if self.current_page == "Settings" {
-                ui.group(|ui| {
-                    ui.label("Appearance");
-                    if let Ok(mut data) = self.state.try_lock() {
-                        ui.radio_value(&mut data.dark_mode, true, "Dark Mode");
-                        ui.radio_value(&mut data.dark_mode, false, "Light Mode");
-                    }
-                });
-            } else {
-                if let Ok(data) = self.state.try_lock() {
-                    // Berikan tipe eksplisit pada closure parameter '|f|'
-                    let _ = self.terminal.draw(|f: &mut Frame<RataguiBackend<EmbeddedGraphics>>| {
-                        let area = f.size(); 
-                        let chunks = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints([
-                                Constraint::Length(3),
-                                Constraint::Length(10),
-                                Constraint::Min(0),
-                            ])
-                            .split(area);
-
-                        f.render_widget(
-                            Paragraph::new(format!(" STATUS: {} ", data.server_status))
-                                .block(Block::default().borders(Borders::ALL).title(" ENGINE "))
-                                .style(Style::default().fg(Color::Yellow)),
-                            chunks[0],
-                        );
-
-                        f.render_widget(
-                            Paragraph::new(format!("\n HITS: {}\n", data.api_hits))
-                                .block(Block::default().borders(Borders::ALL).title(" STATS "))
-                                .style(Style::default().fg(Color::Cyan)),
-                            chunks[1],
-                        );
-
-                        let logs: Vec<ListItem> = data.logs.iter().rev().take(10)
-                            .map(|l| ListItem::new(format!(" > {} | {}", l.time, l.ip)))
-                            .collect();
-
-                        f.render_widget(
-                            List::new(logs)
-                                .block(Block::default().borders(Borders::ALL).title(" LOG "))
-                                .style(Style::default().fg(Color::Green)),
-                            chunks[2],
-                        );
+                ui.label("Settings Page Content");
+            } else if let Ok(data) = self.state.try_lock() {
+                
+                // --- SIMULASI TUI BOX 1: STATUS ---
+                egui::Frame::group(ui.style())
+                    .fill(egui::Color32::from_rgb(10, 10, 10))
+                    .stroke(egui::Stroke::new(1.0, egui::Color32::YELLOW))
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.label(egui::RichText::new(" [ ENGINE STATUS ] ").color(egui::Color32::YELLOW).strong());
+                        ui.label(egui::RichText::new(format!(" STATUS : {}", data.server_status)).monospace());
                     });
-                }
-                ui.add(self.terminal.backend_mut());
+
+                ui.add_space(10.0);
+
+                // --- SIMULASI TUI BOX 2: STATS ---
+                egui::Frame::group(ui.style())
+                    .fill(egui::Color32::from_rgb(10, 10, 10))
+                    .stroke(egui::Stroke::new(1.0, egui::Color32::CYAN))
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.label(egui::RichText::new(" [ STATS ] ").color(egui::Color32::CYAN).strong());
+                        ui.label(egui::RichText::new(format!(" HITS   : {}", data.api_hits)).monospace());
+                        ui.label(egui::RichText::new(" UPTIME : 100% ").monospace());
+                    });
+
+                ui.add_space(10.0);
+
+                // --- SIMULASI TUI BOX 3: LOGS (SCROLLABLE) ---
+                ui.label(egui::RichText::new(" [ ACCESS_LOG ] ").strong());
+                egui::Frame::canvas(ui.style())
+                    .fill(egui::Color32::BLACK)
+                    .show(ui, |ui| {
+                        egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                            ui.set_width(ui.available_width());
+                            for log in data.logs.iter().rev().take(15) {
+                                ui.label(egui::RichText::new(format!(" > {} | {}", log.time, log.ip))
+                                    .monospace()
+                                    .color(egui::Color32::GREEN)
+                                    .size(11.0));
+                            }
+                        });
+                    });
             }
         });
         ctx.request_repaint();
