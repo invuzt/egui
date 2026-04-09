@@ -47,9 +47,9 @@ impl eframe::App for MyApp {
                 
                 ui.add_space(20.0);
 
-                // 2. CHECKBOX / TOGGLE (Custom Visual)
-                let rect = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click()).0;
-                if ui.rect_contains_pointer(rect) && ui.input(|i| i.pointer.any_click()) {
+                // 2. CHECKBOX MANUAL (Tanpa Teks)
+                let (rect, response) = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click());
+                if response.clicked() {
                     self.checked = !self.checked;
                 }
                 let toggle_col = if self.checked { egui::Color32::LIGHT_BLUE } else { egui::Color32::GRAY };
@@ -57,32 +57,24 @@ impl eframe::App for MyApp {
 
                 ui.add_space(20.0);
 
-                // 3. COLOR PICKER (Sangat visual, minim teks)
+                // 3. COLOR PICKER
                 ui.color_edit_button_srgba(&mut self.color);
 
                 ui.add_space(40.0);
 
-                // 4. DYNAMIC GRAPHIC (Viewer)
-                // Menggunakan value dari slider untuk mengubah ukuran objek
+                // 4. DYNAMIC GRAPHIC
                 let painter = ui.painter();
                 let center = ui.max_rect().center();
                 let dynamic_size = 50.0 + (self.value * 100.0);
                 
-                painter.circle_filled(
-                    center, 
-                    dynamic_size, 
-                    self.color
-                );
+                // Gambar Lingkaran Utama
+                painter.circle_filled(center, dynamic_size, self.color);
 
-                // Garis dekoratif (Bezier Curve)
-                painter.error_path(
-                    vec![
-                        center + egui::vec2(-100.0, 100.0),
-                        center + egui::vec2(0.0, 150.0),
-                        center + egui::vec2(100.0, 100.0),
-                    ],
-                    egui::Color32::WHITE,
-                    2.0
+                // Gambar Garis Dekoratif (Memperbaiki error_path)
+                let stroke = egui::Stroke::new(2.0, egui::Color32::WHITE);
+                painter.line_segment(
+                    [center + egui::vec2(-100.0, 150.0), center + egui::vec2(100.0, 150.0)],
+                    stroke
                 );
             });
         });
