@@ -8,4 +8,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu", "glow"] }
-android-activity = { version = "0.5", features = ["native-activity"] }
+# Kita panggil winit secara manual karena eframe menyembunyikannya
+winit = { version = "0.29", features = ["android-native-activity"] }
