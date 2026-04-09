@@ -9,7 +9,7 @@ pub async fn run_server(state: SharedState) {
         }))
         .route("/hit", get({
             let s = state.clone();
-            move |ConnectInfo(addr): ConnectInfo<SocketAddr>| async move {
+            move |ConnectInfo(_addr): ConnectInfo<SocketAddr>| async move {
                 let mut data = s.lock().await;
                 data.api_hits += 1;
                 
