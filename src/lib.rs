@@ -1,17 +1,50 @@
 #![cfg(target_os = "android")]
 use eframe::egui;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
-const COL_BG: egui::Color32 = egui::Color32::from_rgb(10, 10, 10);
-const COL_CARD: egui::Color32 = egui::Color32::from_rgb(18, 18, 18);
-const COL_INNER: egui::Color32 = egui::Color32::from_rgb(26, 26, 26);
-const COL_ACCENT: egui::Color32 = egui::Color32::from_rgb(255, 65, 90);
-const COL_ONLINE: egui::Color32 = egui::Color32::from_rgb(0, 200, 110);
-const COL_TEXT_MAIN: egui::Color32 = egui::Color32::from_rgb(220, 220, 220);
-const COL_TEXT_WEAK: egui::Color32 = egui::Color32::from_rgb(130, 130, 130);
+// State aplikasi untuk sinkronisasi Server & UI
+struct AppState {
+    status: String,
+    counter: u64,
+}
 
 #[no_mangle]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
+    
+    // Inisialisasi State yang bisa dibagi antar thread
+    let state = Arc::new(Mutex::new(AppState {
+        status: "Starting...".to_string(),
+        counter: 0,
+    }));
+
+    // --- SIKSAAN 1: Jalankan Server Axum di Background ---
+    let server_state = state.clone();
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let app = axum::Router::new()
+                .route("/", axum::routing::get(|| async { "Odfiz Core Server: High Performance Rust" }))
+                .route("/hit", axum::routing::get({
+                    let s = server_state.clone();
+                    move || async move {
+                        let mut data = s.lock().await;
+                        data.counter += 1;
+                        format!("Hit count: {}", data.counter)
+                    }
+                }));
+
+            let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+            {
+                let mut data = server_state.lock().await;
+                data.status = "Online (Port 3000)".to_string();
+            }
+            axum::serve(listener, app).await.unwrap();
+        });
+    });
+
+    // --- UI EGUI (Frontend) ---
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {
@@ -22,10 +55,10 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         "Odfiz Core",
         options,
         Box::new(|cc| {
-            // DIET SKALA: Turun ke 1.6 - 1.7 agar layout terlihat lebih padat/compact
-            cc.egui_ctx.set_pixels_per_point(1.7); 
+            // DIET KETAT: Skala 1.4 agar terlihat seperti app sistem yang padat
+            cc.egui_ctx.set_pixels_per_point(1.4); 
             setup_custom_fonts(&cc.egui_ctx);
-            Box::new(OdfizCore::default())
+            Box::new(OdfizApp { state })
         }),
     );
 }
@@ -38,78 +71,39 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     ctx.set_fonts(fonts);
 }
 
-struct OdfizCore {}
-impl Default for OdfizCore { fn default() -> Self { Self {} } }
+struct OdfizApp {
+    state: Arc<Mutex<AppState>>,
+}
 
-impl eframe::App for OdfizCore {
+impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let mut visuals = egui::Visuals::dark();
-        visuals.override_text_color = Some(COL_TEXT_MAIN);
-        ctx.set_visuals(visuals);
+        // Gunakan visual default yang bersih
+        ctx.set_visuals(egui::Visuals::dark());
 
-        egui::CentralPanel::default()
-            .frame(egui::Frame::none().fill(COL_BG))
-            .show(ctx, |ui| {
-            
+        egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(ui.available_height() / 5.0); // Naikkan sedikit posisinya
+                ui.add_space(10.0);
+                ui.heading(egui::RichText::new("ODFIZ CORE").strong().extra_letter_spacing(1.0));
+                ui.separator();
 
-                egui::Frame::none()
-                    .fill(COL_CARD)
-                    .rounding(16.0) // Rounding lebih kecil supaya lebih sleek
-                    .inner_margin(egui::Margin::symmetric(20.0, 25.0))
-                    .show(ui, |ui| {
-                        
-                        ui.heading(egui::RichText::new("ODFIZ CORE")
-                            .color(COL_ACCENT)
-                            .strong()
-                            .size(18.0) // Ukuran font heading diperkecil
-                            .extra_letter_spacing(2.0));
-                        
-                        ui.add_space(12.0);
-
-                        egui::Frame::none()
-                            .fill(COL_INNER)
-                            .rounding(8.0)
-                            .inner_margin(egui::Margin::symmetric(12.0, 12.0))
-                            .show(ui, |ui| {
-                                ui.horizontal(|ui| {
-                                    let line_start = ui.cursor().min;
-                                    ui.painter().line_segment(
-                                        [egui::pos2(line_start.x - 4.0, line_start.y), egui::pos2(line_start.x - 4.0, line_start.y + 55.0)],
-                                        egui::Stroke::new(2.5, COL_ACCENT)
-                                    );
-                                    ui.add_space(8.0);
-
-                                    ui.vertical(|ui| {
-                                        ui.spacing_mut().item_spacing.y = 1.0;
-                                        ui.label(egui::RichText::new("BRAND").color(COL_TEXT_WEAK).size(9.0));
-                                        ui.label(egui::RichText::new("Odfiz Tech").size(13.0));
-                                        ui.add_space(2.0);
-                                        ui.label(egui::RichText::new("ENGINE").color(COL_TEXT_WEAK).size(9.0));
-                                        ui.label(egui::RichText::new("Rust Axum 0.7").size(13.0));
-                                        ui.add_space(2.0);
-                                        ui.label(egui::RichText::new("STATUS").color(COL_TEXT_WEAK).size(9.0));
-                                        ui.label(egui::RichText::new("Online").color(COL_ONLINE).size(13.0).strong());
-                                    });
-                                });
-                            });
-
-                        ui.add_space(15.0);
-                        
-                        // Tombol REFRESH yang lebih slim
-                        ui.visuals_mut().widgets.inactive.bg_fill = COL_ACCENT;
-                        ui.visuals_mut().widgets.hovered.bg_fill = COL_ACCENT;
-                        ui.visuals_mut().widgets.active.bg_fill = COL_ACCENT;
-                        
-                        let button = egui::Button::new(
-                            egui::RichText::new("REFRESH").color(egui::Color32::WHITE).size(12.0).strong()
-                        ).min_size(egui::vec2(140.0, 32.0)); // Lebar dibatasi, tidak full width raksasa
-
-                        ui.add(button);
+                // Ambil data dari server thread (non-blocking)
+                if let Ok(data) = self.state.try_lock() {
+                    ui.group(|ui| {
+                        ui.set_width(ui.available_width());
+                        ui.label(format!("Server Status: {}", data.status));
+                        ui.label(format!("API Hits: {}", data.counter));
                     });
+                }
+
+                ui.add_space(10.0);
+                ui.label("Mesin Rust Aktif di Background");
+                
+                if ui.button("Simulasi Refresh").clicked() {
+                    // Logic refresh
+                }
             });
         });
-        ctx.request_repaint();
+        // Paksa refresh UI tiap detik untuk update status server
+        ctx.request_repaint_after(std::time::Duration::from_millis(500));
     }
 }
