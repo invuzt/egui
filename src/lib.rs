@@ -11,6 +11,7 @@ use tokio::sync::Mutex;
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     let state: SharedState = Arc::new(Mutex::new(AppState {
         active_nodes: Vec::new(),
+        connections: Vec::new(), // Tambahkan ini
         animation_time: 0.0,
         zoom: 1.0,
         pan: egui::Vec2::ZERO,
