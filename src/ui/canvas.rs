@@ -46,7 +46,7 @@ pub fn show(ui: &mut egui::Ui, state: &crate::state::SharedState, registry: &cra
         // Logika "Snap" saat drop
         if let Some(idx) = drag_ended_node {
             let dropped_pos = data.active_nodes[idx].pos;
-            let dropped_id = data.active_nodes[idx].id;
+            let _dropped_id = data.active_nodes[idx].id;
             
             for j in 0..data.active_nodes.len() {
                 if idx == j { continue; }
@@ -64,6 +64,6 @@ pub fn show(ui: &mut egui::Ui, state: &crate::state::SharedState, registry: &cra
         if let Some(id) = node_to_delete {
             data.active_nodes.retain(|n| n.id != id);
         }
-        data.animation_time = (ui.input(|i| i.time) as f32 % 1.0);
+        data.animation_time = ui.input(|i| i.time) as f32 % 1.0;
     }
 }

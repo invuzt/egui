@@ -19,7 +19,11 @@ impl OdfizApp {
         if let Ok(mut data) = self.state.try_lock() {
             let id = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
             data.active_nodes.push(crate::state::ActiveNode {
-                id, mod_index: mod_idx, pos: egui::Pos2::new(100.0, 100.0), current_value: 0.0,
+                id, 
+                mod_index: mod_idx, 
+                pos: egui::Pos2::new(100.0, 100.0), 
+                current_value: 0.0,
+                parent_id: None, // FIX: Field baru harus ada di sini
             });
         }
     }
