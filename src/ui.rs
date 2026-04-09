@@ -25,41 +25,28 @@ impl eframe::App for OdfizApp {
             show_panel = data.show_panel;
         }
 
+        // Set Tema
         if is_dark {
             ctx.set_visuals(egui::Visuals::dark());
         } else {
             ctx.set_visuals(egui::Visuals::light());
         }
 
-        // --- SIDE PANEL (RAMPING: 80px) ---
+        // --- SIDE PANEL (Hanya muncul jika show_panel true) ---
         if show_panel {
             egui::SidePanel::left("menu_panel")
                 .resizable(false)
-                .default_width(80.0) // Lebih sempit
+                .default_width(70.0) // Makin ramping makin mantap
                 .show(ctx, |ui| {
-                    ui.add_space(45.0); // Safe area status bar
+                    ui.add_space(45.0); 
                     ui.vertical_centered(|ui| {
-                        ui.label(egui::RichText::new("ODFIZ").strong().size(14.0));
-                        ui.add_space(10.0);
-                        ui.separator();
-                        ui.add_space(15.0);
-                        
-                        // Menu Items (Teks lebih kecil agar muat)
-                        if ui.selectable_label(self.current_page == "Home", "🏠").clicked() {
+                        // Navigasi Ikon
+                        if ui.selectable_label(self.current_page == "Home", "🏠 Home").clicked() {
                             self.current_page = "Home".to_string();
                         }
-                        ui.add_space(15.0);
-                        if ui.selectable_label(self.current_page == "Settings", "⚙").clicked() {
+                        ui.add_space(20.0);
+                        if ui.selectable_label(self.current_page == "Settings", "⚙ Settings").clicked() {
                             self.current_page = "Settings".to_string();
-                        }
-                        
-                        ui.add_space(30.0);
-                        ui.separator();
-                        ui.add_space(10.0);
-
-                        // TOMBOL HIDE: Sekarang di atas, mudah ditekan
-                        if ui.button("HIDE").clicked() {
-                           if let Ok(mut data) = self.state.try_lock() { data.show_panel = false; }
                         }
                     });
                 });
@@ -67,37 +54,41 @@ impl eframe::App for OdfizApp {
 
         // --- CENTRAL PANEL ---
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(45.0); // Safe area top
+            ui.add_space(45.0); // Safe Area
             
             ui.horizontal(|ui| {
-                if !show_panel {
-                    if ui.button("☰ MENU").clicked() {
-                        if let Ok(mut data) = self.state.try_lock() { data.show_panel = true; }
+                // TOMBOL TOGGLE TUNGGAL
+                let button_text = if show_panel { "◀" } else { "☰" };
+                if ui.button(button_text).clicked() {
+                    if let Ok(mut data) = self.state.try_lock() {
+                        data.show_panel = !data.show_panel; // Balikkan status (Toggle)
                     }
                 }
+                
                 ui.heading(&self.current_page);
             });
             ui.separator();
 
+            // Konten Halaman
             match self.current_page.as_str() {
                 "Settings" => {
                     ui.group(|ui| {
                         ui.label("Appearance");
                         if let Ok(mut data) = self.state.try_lock() {
-                            ui.radio_value(&mut data.dark_mode, true, "Dark");
-                            ui.radio_value(&mut data.dark_mode, false, "Light");
+                            ui.radio_value(&mut data.dark_mode, true, "Dark Mode");
+                            ui.radio_value(&mut data.dark_mode, false, "Light Mode");
                         }
                     });
                 },
                 _ => {
                     if let Ok(data) = self.state.try_lock() {
                         ui.label(format!("Server: {}", data.server_status));
-                        ui.label(format!("Hits: {}", data.api_hits));
-                        ui.add_space(15.0);
+                        ui.label(format!("API Hits: {}", data.api_hits));
+                        ui.add_space(20.0);
                         ui.label("Access Logs:");
                         ui.group(|ui| {
                             ui.set_width(ui.available_width());
-                            for log in data.logs.iter().rev().take(8) {
+                            for log in data.logs.iter().rev().take(5) {
                                 ui.label(egui::RichText::new(format!("[{}] {}", log.time, log.ip)).monospace().size(10.0));
                             }
                         });
