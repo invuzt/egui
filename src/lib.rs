@@ -12,22 +12,20 @@ use tokio::sync::Mutex;
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
-    // INISIALISASI DATA BARU (Lengkap sesuai state.rs)
     let state: SharedState = Arc::new(Mutex::new(AppState {
         server_status: "Starting...".into(),
         api_hits: 0,
-        logs: Vec::new(),      // Tambahkan ini
-        show_panel: true,      // Tambahkan ini
+        logs: Vec::new(),
+        show_panel: true,
+        dark_mode: true, // Inisialisasi default ke Dark Mode
     }));
 
-    // Jalankan Server di Background
     let s_state = state.clone();
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(server::run_server(s_state));
     });
 
-    // Konfigurasi UI (egui)
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {

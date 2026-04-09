@@ -11,6 +11,7 @@ pub struct AppState {
     pub api_hits: u64,
     pub logs: Vec<LogEntry>,
     pub show_panel: bool,
+    pub dark_mode: bool, // Tambah variabel tema
 }
 
 pub type SharedState = Arc<Mutex<AppState>>;
