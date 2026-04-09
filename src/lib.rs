@@ -15,44 +15,43 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         "Odfiz App",
         options,
         Box::new(|cc| {
-            // SETTING: Memperbesar UI agar tidak kecil di layar HP
-            cc.egui_ctx.set_pixels_per_point(3.0); 
+            // Memastikan UI cukup besar untuk layar HP
+            cc.egui_ctx.set_pixels_per_point(3.0);
+            
+            // Opsional: Custom font bisa dimuat di sini jika masih kosong
             Box::new(MyApp::default())
         }),
     );
 }
 
 struct MyApp {
-    name: String,
+    text: String,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        Self { name: "Developer".to_owned() }
+        Self { text: "Odfiz Rust".to_owned() }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Membuat konten di tengah layar
             ui.vertical_centered(|ui| {
-                ui.add_space(50.0);
-                ui.heading("🚀 Odfiz Rust Android");
-                ui.add_space(20.0);
+                ui.add_space(100.0);
+                // Menggunakan heading agar teks lebih besar
+                ui.heading("🚀 Odfiz Native Rust");
                 
-                ui.group(|ui| {
-                    ui.label("Masukkan Nama Anda:");
-                    ui.text_edit_singleline(&mut self.name);
-                });
-
                 ui.add_space(20.0);
-                if ui.button("KLIK SAYA").clicked() {
-                    self.name = "Berhasil Push!".to_owned();
+                ui.text_edit_singleline(&mut self.text);
+                
+                ui.add_space(20.0);
+                if ui.button("Konfirmasi").clicked() {
+                    self.text = "Teks Terdeteksi!".to_owned();
                 }
                 
                 ui.add_space(20.0);
-                ui.label(format!("Status: {}", self.name));
+                ui.label(format!("Input: {}", self.text));
             });
         });
     }
