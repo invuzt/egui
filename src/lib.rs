@@ -11,43 +11,81 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Graphic Test",
+        "Odfiz Graphic UI",
         options,
-        Box::new(|_cc| Box::new(MyApp::default())),
+        Box::new(|cc| {
+            cc.egui_ctx.set_pixels_per_point(3.0);
+            Box::new(MyApp::default())
+        }),
     );
 }
 
 struct MyApp {
-    rotation: f32,
+    value: f32,
+    checked: bool,
+    color: egui::Color32,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        Self { rotation: 0.0 }
+        Self { 
+            value: 0.5, 
+            checked: false,
+            color: egui::Color32::from_rgb(0, 255, 127),
+        }
     }
 }
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Kita buat animasi rotasi tanpa teks
-            self.rotation += 0.02;
-            
-            let center = ui.max_rect().center();
-            let painter = ui.painter();
-            
-            // Gambar Kotak berputar di tengah (Logo Odfiz abstrak)
-            let size = 100.0;
-            let color = egui::Color32::from_rgb(0, 255, 127);
-            
-            painter.rect_filled(
-                egui::Rect::from_center_size(center, egui::vec2(size, size)),
-                10.0, // rounding
-                color
-            );
+            ui.vertical_centered(|ui| {
+                ui.add_space(30.0);
 
-            // Minta layar refresh terus untuk animasi
-            ctx.request_repaint();
+                // 1. SLIDER (Tanpa Label Teks)
+                ui.add(egui::Slider::new(&mut self.value, 0.0..=1.0).show_value(false));
+                
+                ui.add_space(20.0);
+
+                // 2. CHECKBOX / TOGGLE (Custom Visual)
+                let rect = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click()).0;
+                if ui.rect_contains_pointer(rect) && ui.input(|i| i.pointer.any_click()) {
+                    self.checked = !self.checked;
+                }
+                let toggle_col = if self.checked { egui::Color32::LIGHT_BLUE } else { egui::Color32::GRAY };
+                ui.painter().rect_filled(rect, 15.0, toggle_col);
+
+                ui.add_space(20.0);
+
+                // 3. COLOR PICKER (Sangat visual, minim teks)
+                ui.color_edit_button_srgba(&mut self.color);
+
+                ui.add_space(40.0);
+
+                // 4. DYNAMIC GRAPHIC (Viewer)
+                // Menggunakan value dari slider untuk mengubah ukuran objek
+                let painter = ui.painter();
+                let center = ui.max_rect().center();
+                let dynamic_size = 50.0 + (self.value * 100.0);
+                
+                painter.circle_filled(
+                    center, 
+                    dynamic_size, 
+                    self.color
+                );
+
+                // Garis dekoratif (Bezier Curve)
+                painter.error_path(
+                    vec![
+                        center + egui::vec2(-100.0, 100.0),
+                        center + egui::vec2(0.0, 150.0),
+                        center + egui::vec2(100.0, 100.0),
+                    ],
+                    egui::Color32::WHITE,
+                    2.0
+                );
+            });
         });
+        ctx.request_repaint();
     }
 }
