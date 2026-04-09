@@ -1,4 +1,4 @@
-use egui::{Painter, Pos2, Color32, Shape, Rect, Vec2};
+use egui::{Painter, Pos2, Color32, Shape, Rect, Vec2, Stroke};
 
 pub trait OdfizMod: Send + Sync {
     fn name(&self) -> &str;
@@ -18,7 +18,7 @@ impl ModRegistry {
                 Box::new(SquareMod),
                 Box::new(SineMod),
                 Box::new(MoveMod),
-                Box::new(RotateMod), // Mod baru terdaftar di sini
+                Box::new(RotateMod),
             ],
         }
     }
@@ -67,11 +67,9 @@ pub struct RotateMod;
 impl OdfizMod for RotateMod {
     fn name(&self) -> &str { "🔄 Rotate Logic" }
     fn execute(&self, input: f32) -> f32 {
-        // Mengubah input 0..1 menjadi 0..TAU (360 derajat dalam radian)
         input * std::f32::consts::TAU
     }
     fn draw_preview(&self, painter: &Painter, center: Pos2, value: f32) {
-        // Visualisasi rotasi dengan garis penunjuk
         let line_end = center + Vec2::new(value.cos() * 30.0, value.sin() * 30.0);
         painter.add(Shape::line_segment([center, line_end], Stroke::new(2.0, Color32::LIGHT_GREEN)));
     }
