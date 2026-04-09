@@ -6,40 +6,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
-
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
-
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
-
       - name: Build Rust Lib
         run: |
           mkdir -p app/src/main/jniLibs/arm64-v8a
-          # Memaksa fitur android-native-activity agar run_native menerima 4 argumen
-          cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release --features eframe/android-native-activity
-
+          # Gunakan --all-features untuk memastikan android-native-activity aktif
+          cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release --all-features
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Build APK with Gradle
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: agdk-egui-final-apk
+          name: agdk-egui-apk
           path: app/build/outputs/apk/debug/*.apk

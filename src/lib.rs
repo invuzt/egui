@@ -1,18 +1,16 @@
+#![cfg(target_os = "android")]
 use eframe::egui;
-use android_activity::AndroidApp;
 
 #[no_mangle]
-fn android_main(app: AndroidApp) {
-    let mut options = eframe::NativeOptions::default();
-    
-    // Trik: Memasukkan AndroidApp ke dalam closure renderer
-    // Ini menghindari masalah jumlah argumen pada run_native
-    eframe::run_native(
-        "Hello Egui",
+fn android_main(app: android_activity::AndroidApp) {
+    let options = eframe::NativeOptions::default();
+
+    // Menggunakan run_android untuk menghindari konflik dengan run_native desktop
+    eframe::run_android(
+        app,
         options,
         Box::new(|_cc| Box::new(MyApp::default())),
-        app,
-    );
+    ).expect("Gagal menjalankan eframe");
 }
 
 struct MyApp {
@@ -28,11 +26,9 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Odfiz Egui Android");
+            ui.heading("Odfiz Android Berhasil!");
+            ui.label(format!("Halo, {}!", self.name));
             ui.text_edit_singleline(&mut self.name);
-            if ui.button("Klik").clicked() {
-                self.name = "BERHASIL!".to_owned();
-            }
         });
     }
 }

@@ -8,5 +8,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu"] }
-# Kita kunci versi android-activity agar tidak berubah
 android-activity = { version = "0.5", features = ["native-activity"] }
