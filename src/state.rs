@@ -2,11 +2,19 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use egui::Pos2;
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum EasingType {
+    Linear,
+    SineInOut,
+    BounceOut,
+    ElasticOut,
+}
+
 #[derive(Clone, PartialEq)]
 pub enum NodeType {
-    InputTime,
-    EasingCurve(String), // String = nama kurva (e.g., "SineInOut")
-    OutputProperty(String), // e.g., "Rotation", "Opacity"
+    Generator,      // Source: Time, Frame
+    Tweener(EasingType), // Logic: Easing Curves
+    Actor(String),  // Output: Position, Rotation, Scale
 }
 
 pub struct Node {
@@ -14,7 +22,8 @@ pub struct Node {
     pub name: String,
     pub node_type: NodeType,
     pub pos: Pos2,
-    pub value: f32, // Nilai output saat ini
+    pub input_val: f32,
+    pub output_val: f32,
 }
 
 pub struct Connection {
@@ -26,8 +35,7 @@ pub struct AppState {
     pub nodes: Vec<Node>,
     pub connections: Vec<Connection>,
     pub show_panel: bool,
-    pub dark_mode: bool,
-    pub animation_time: f32, // Waktu global animasi (0.0 - 1.0)
+    pub animation_time: f32, // Global Clock (0.0 to 1.0)
 }
 
 pub type SharedState = Arc<Mutex<AppState>>;
