@@ -7,77 +7,92 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {
+        builder.with_layout_guide(true);
         builder.with_android_app(app);
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Graphic UI",
+        "Odfiz Mini Gallery",
         options,
         Box::new(|cc| {
-            cc.egui_ctx.set_pixels_per_point(3.0);
-            Box::new(MyApp::default())
+            // Kita kecilkan skalanya agar muat banyak widget
+            cc.egui_ctx.set_pixels_per_point(2.5); 
+            Box::new(MiniGallery::default())
         }),
     );
 }
 
-struct MyApp {
-    value: f32,
-    checked: bool,
+struct MiniGallery {
+    scalar: f32,
+    boolean: bool,
     color: egui::Color32,
+    animate: bool,
 }
 
-impl Default for MyApp {
+impl Default military::MiniGallery {
     fn default() -> Self {
-        Self { 
-            value: 0.3, 
-            checked: true,
+        Self {
+            scalar: 180.0,
+            boolean: true,
             color: egui::Color32::from_rgb(0, 255, 127),
+            animate: true,
         }
     }
 }
 
-impl eframe::App for MyApp {
+// Implementasi manual untuk MiniGallery agar tidak crash tanpa font
+impl eframe::App for MiniGallery {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let center = ui.max_rect().center();
-            
-            // --- AREA VISUAL (Latar Belakang) ---
-            let painter = ui.painter();
-            let dynamic_size = 30.0 + (self.value * 150.0);
-            
-            painter.circle_filled(center, dynamic_size, self.color);
-            
-            if self.checked {
-                painter.circle_stroke(center, dynamic_size + 10.0, egui::Stroke::new(2.0, egui::Color32::WHITE));
-            }
+            ui.spacing_mut().item_spacing = egui::vec2(10.0, 15.0);
 
-            // --- AREA KONTROL (Diatur ke Bawah Layar) ---
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                ui.add_space(40.0); // Margin bawah
+            ui.vertical_centered(|ui| {
+                ui.add_space(20.0);
 
-                // Row untuk Color Picker dan Toggle
-                ui.horizontal(|ui| {
-                    ui.add_space(ui.available_width() / 4.0);
+                // 1. Progress Bar (Visual Utama)
+                let progress = self.scalar / 360.0;
+                ui.add(egui::ProgressBar::new(progress)
+                    .animate(self.animate));
+
+                ui.add_space(10.0);
+
+                // 2. Grid Kontrol Kecil
+                egui::Grid::new("mini_grid").spacing([20.0, 20.0]).show(ui, |ui| {
+                    // Slider tanpa label angka
+                    ui.add(egui::Slider::new(&mut self.scalar, 0.0..=360.0).show_value(false));
+                    
+                    // Tombol Warna
                     ui.color_edit_button_srgba(&mut self.color);
+                    ui.end_row();
+
+                    // Spinner (Visual loading)
+                    ui.add(egui::Spinner::new());
                     
-                    ui.add_space(20.0);
-                    
-                    let (rect, response) = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click());
-                    if response.clicked() { self.checked = !self.checked; }
-                    let toggle_col = if self.checked { egui::Color32::LIGHT_BLUE } else { egui::Color32::GRAY };
-                    ui.painter().rect_filled(rect, 15.0, toggle_col);
+                    // Checkbox Custom (Hanya kotak)
+                    let (rect, response) = ui.allocate_exact_size(egui::vec2(30.0, 30.0), egui::Sense::click());
+                    if response.clicked() { self.boolean = !self.boolean; }
+                    let fill = if self.boolean { self.color } else { egui::Color32::TRANSPARENT };
+                    ui.painter().rect(rect, 4.0, fill, egui::Stroke::new(2.0, egui::Color32::GRAY));
+                    ui.end_row();
                 });
 
                 ui.add_space(20.0);
 
-                // Slider (Full width di bawah)
-                ui.add(egui::Slider::new(&mut self.value, 0.0..=1.0)
-                    .show_value(false)
-                    .trailing_fill(true));
-
-                ui.add_space(20.0);
+                // 3. Area Gambar/Shape
+                let painter = ui.painter();
+                let rect = ui.max_rect();
+                let center = egui::pos2(rect.center().x, rect.center().y + 50.0);
+                
+                painter.rect_filled(
+                    egui::Rect::from_center_size(center, egui::vec2(80.0, 80.0)),
+                    self.scalar / 10.0, // Rounding berubah lewat slider
+                    self.color
+                );
             });
         });
-        ctx.request_repaint();
+
+        if self.animate {
+            ctx.request_repaint();
+        }
     }
 }
