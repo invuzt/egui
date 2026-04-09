@@ -14,3 +14,4 @@ egui = "0.27"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "macros"] }
 axum = "0.7"
 egui_plot = "0.27"
+chrono = "0.4"
