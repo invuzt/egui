@@ -19,6 +19,7 @@ impl ModRegistry {
                 Box::new(SineMod),
                 Box::new(MoveMod),
                 Box::new(RotateMod),
+                Box::new(ColorMod), // Daftarkan Color Mod di sini
             ],
         }
     }
@@ -44,7 +45,7 @@ impl OdfizMod for SquareMod {
     }
 }
 
-// --- TWEENERS / LOGIC ---
+// --- LOGIC / TWEENERS ---
 struct SineMod;
 impl OdfizMod for SineMod {
     fn name(&self) -> &str { "Sine Tweener" }
@@ -66,11 +67,21 @@ impl OdfizMod for MoveMod {
 pub struct RotateMod;
 impl OdfizMod for RotateMod {
     fn name(&self) -> &str { "🔄 Rotate Logic" }
-    fn execute(&self, input: f32) -> f32 {
-        input * std::f32::consts::TAU
-    }
+    fn execute(&self, input: f32) -> f32 { input * std::f32::consts::TAU }
     fn draw_preview(&self, painter: &Painter, center: Pos2, value: f32) {
         let line_end = center + Vec2::new(value.cos() * 30.0, value.sin() * 30.0);
         painter.add(Shape::line_segment([center, line_end], Stroke::new(2.0, Color32::LIGHT_GREEN)));
+    }
+}
+
+pub struct ColorMod;
+impl OdfizMod for ColorMod {
+    fn name(&self) -> &str { "🎨 Color Mod" }
+    fn execute(&self, input: f32) -> f32 { input } // Mengirim nilai 0..1 untuk interpolasi warna
+    fn draw_preview(&self, painter: &Painter, center: Pos2, value: f32) {
+        // Visualisasi perubahan warna dari Merah ke Biru
+        let r = (value * 255.0) as u8;
+        let b = (255.0 - value * 255.0) as u8;
+        painter.add(Shape::circle_filled(center, 15.0, Color32::from_rgb(r, 0, b)));
     }
 }
