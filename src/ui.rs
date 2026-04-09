@@ -51,39 +51,42 @@ impl eframe::App for OdfizApp {
                 data.zoom *= zoom_delta;
                 if response.dragged_by(egui::PointerButton::Secondary) { data.pan += response.drag_delta(); }
 
-                // Perbaikan Transformasi Layar
+                // Tarik variabel ke lokal untuk menghindari Borrow Conflict
+                let current_zoom = data.zoom;
+                let current_pan = data.pan;
+                let time = data.animation_time;
+
                 let base_rect = Rect::from_min_size(Pos2::ZERO, response.rect.size());
-                let transformed_rect = response.rect.translate(data.pan);
+                let transformed_rect = response.rect.translate(current_pan);
                 let to_screen = eframe::emath::RectTransform::from_to(base_rect, transformed_rect);
 
                 // A. Kabel Bezier
                 for conn in &data.connections {
-                    let from = data.active_nodes.iter().find(|n| n.id == conn.from_node);
-                    let to = data.active_nodes.iter().find(|n| n.id == conn.to_node);
-                    if let (Some(f), Some(t)) = (from, to) {
-                        let p_out = to_screen * (f.pos + Vec2::new(120.0, 25.0) * data.zoom);
+                    let from_node = data.active_nodes.iter().find(|n| n.id == conn.from_node);
+                    let to_node = data.active_nodes.iter().find(|n| n.id == conn.to_node);
+                    if let (Some(f), Some(t)) = (from_node, to_node) {
+                        let p_out = to_screen * (f.pos + Vec2::new(120.0, 25.0) * current_zoom);
                         let p_in = to_screen * (t.pos);
                         painter.add(Shape::CubicBezier(CubicBezierShape::from_points_stroke(
-                            [p_out, p_out + Vec2::new(50.0 * data.zoom, 0.0), p_in - Vec2::new(50.0 * data.zoom, 0.0), p_in],
-                            false, Color32::TRANSPARENT, Stroke::new(2.0 * data.zoom, Color32::LIGHT_BLUE)
+                            [p_out, p_out + Vec2::new(50.0 * current_zoom, 0.0), p_in - Vec2::new(50.0 * current_zoom, 0.0), p_in],
+                            false, Color32::TRANSPARENT, Stroke::new(2.0 * current_zoom, Color32::LIGHT_BLUE)
                         )));
                     }
                 }
 
                 // B. Nodes
-                let time = data.animation_time;
                 for node in &mut data.active_nodes {
                     node.current_value = self.registry.available[node.mod_index].execute(time);
-                    let scaled_size = Vec2::new(120.0, 50.0) * data.zoom;
+                    let scaled_size = Vec2::new(120.0, 50.0) * current_zoom;
                     let screen_rect = Rect::from_min_size(to_screen * node.pos, scaled_size);
                     
                     let node_res = ui.interact(screen_rect, ui.make_persistent_id(node.id), egui::Sense::drag());
-                    if node_res.dragged() { node.pos += node_res.drag_delta() / data.zoom; }
+                    if node_res.dragged() { node.pos += node_res.drag_delta() / current_zoom; }
 
                     painter.add(Shape::rect_filled(screen_rect, 4.0, Color32::from_rgb(50, 50, 50)));
                     painter.text(screen_rect.center(), egui::Align2::CENTER_CENTER, 
                                  &self.registry.available[node.mod_index].name(), 
-                                 egui::FontId::proportional(12.0 * data.zoom), Color32::WHITE);
+                                 egui::FontId::proportional(12.0 * current_zoom), Color32::WHITE);
                 }
                 data.animation_time = (data.animation_time + 0.005) % 1.0;
             }
