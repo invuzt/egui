@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     let state: SharedState = Arc::new(Mutex::new(AppState {
         active_nodes: Vec::new(),
-        connections: Vec::new(), // Tambahkan ini
+        connections: Vec::new(),
         animation_time: 0.0,
         zoom: 1.0,
         pan: egui::Vec2::ZERO,
@@ -23,7 +23,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         builder.with_android_app(app);
     }));
 
-    let _ = eframe::run_native("Odfiz Mod Engine", options, Box::new(|_cc| {
+    let _ = eframe::run_native("Odfiz Core", options, Box::new(|_cc| {
         Box::new(ui::OdfizApp::new(state))
     }));
 }
