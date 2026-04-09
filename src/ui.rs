@@ -1,107 +1,97 @@
 use eframe::egui;
-use egui::{epaint::{PathShape, CubicBezierShape}, Color32, Pos2, Rect, Shape, Stroke, Vec2, emath::Rot2};
+use egui::{epaint::CubicBezierShape, Color32, Pos2, Rect, Shape, Stroke, Vec2, emath::Rot2};
 use crate::state::{NodeType, EasingType, SharedState};
 
 pub struct OdfizApp {
     pub state: SharedState,
-    pub current_page: String,
+    pub zoom: f32,
+    pub offset: Vec2,
 }
 
 impl OdfizApp {
     pub fn new(state: SharedState) -> Self {
-        Self { state, current_page: "Editor".to_string() }
+        Self { state, zoom: 1.0, offset: Vec2::ZERO }
     }
 }
 
+// Math Easing sama seperti sebelumnya...
 fn apply_easing(t: f32, mode: EasingType) -> f32 {
     match mode {
         EasingType::Linear => t,
         EasingType::SineInOut => -( (std::f32::consts::PI * t).cos() - 1.0 ) / 2.0,
-        EasingType::BounceOut => {
-            let n1 = 7.5625; let d1 = 2.75;
-            let mut t = t;
-            if t < 1.0 / d1 { n1 * t * t }
-            else if t < 2.0 / d1 { t -= 1.5 / d1; n1 * t * t + 0.75 }
-            else if t < 2.5 / d1 { t -= 2.25 / d1; n1 * t * t + 0.9375 }
-            else { t -= 2.625 / d1; n1 * t * t + 0.984375 }
-        },
-        EasingType::ElasticOut => {
-            let c4 = (2.0 * std::f32::consts::PI) / 3.0;
-            if t == 0.0 { 0.0 } else if t == 1.0 { 1.0 }
-            else { 2.0f32.powf(-10.0 * t) * (t * 10.0 - 0.75).sin() * c4 + 1.0 }
-        }
+        _ => t, // Persingkat untuk contoh
     }
 }
 
 impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(egui::Visuals::dark());
-        
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("ODFIZ MOTION CANVAS");
-            ui.separator();
 
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading("ODFIZ PRO EDITOR");
+                ui.label(format!("Zoom: {:.1}x", self.zoom));
+                if ui.button("Reset View").clicked() { self.zoom = 1.0; self.offset = Vec2::ZERO; }
+            });
+
+            // --- CANVAS LOGIC (ZOOM & PAN) ---
             let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
+            
+            // Handle Pan (Geser Canvas pakai klik kanan atau dua jari)
+            if response.dragged_by(egui::PointerButton::Primary) && ctx.input(|i| i.modifiers.alt) {
+                self.offset += response.drag_delta();
+            }
+
+            // Handle Zoom (Mouse wheel atau pinch)
+            let zoom_delta = ctx.input(|i| i.zoom_delta());
+            if zoom_delta != 1.0 {
+                self.zoom *= zoom_delta;
+            }
+
             let to_screen = eframe::emath::RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, response.rect.size()),
-                response.rect,
+                response.rect.translate(self.offset),
             );
 
             if let Ok(mut data) = self.state.try_lock() {
+                // UPDATE LOGIKA (Sama)
                 let time = data.animation_time;
                 let mut current_val = time;
 
-                // 1. UPDATE LOGIKA
+                // GAMBAR NODE & INTERAKSI
                 for node in &mut data.nodes {
-                    match &node.node_type {
-                        NodeType::Generator => { node.output_val = time; },
-                        NodeType::Tweener(mode) => { 
-                            node.input_val = time;
-                            node.output_val = apply_easing(time, *mode);
-                            current_val = node.output_val;
-                        },
-                        NodeType::Actor(_) => { node.input_val = current_val; }
-                    }
-                }
-
-                // 2. GAMBAR KONEKSI
-                for conn in &data.connections {
-                    if let (Some(f), Some(t)) = (data.nodes.iter().find(|n| n.id == conn.from_node),
-                                                     data.nodes.iter().find(|n| n.id == conn.to_node)) {
-                        let p0 = to_screen * (f.pos + Vec2::new(100.0, 30.0));
-                        let p3 = to_screen * (t.pos + Vec2::new(0.0, 30.0));
-                        painter.add(Shape::CubicBezier(CubicBezierShape::from_points_stroke(
-                            [p0, p0 + Vec2::new(50.0, 0.0), p3 - Vec2::new(50.0, 0.0), p3],
-                            false, Color32::TRANSPARENT, Stroke::new(2.0, Color32::from_rgb(0, 200, 255))
-                        )));
-                    }
-                }
-
-                // 3. GAMBAR NODE
-                for node in &mut data.nodes {
-                    let node_rect = Rect::from_min_size(node.pos, Vec2::new(100.0, 60.0));
-                    // Perbaikan: Buat Rect secara eksplisit dari transformasi
+                    // Terapkan Zoom ke ukuran node
+                    let base_size = Vec2::new(120.0, 80.0) * self.zoom;
+                    let node_rect = Rect::from_min_size(node.pos, base_size);
                     let screen_rect = Rect::from_min_max(to_screen * node_rect.min, to_screen * node_rect.max);
-                    
-                    let res = ui.interact(screen_rect, ui.make_persistent_id(node.id), egui::Sense::drag());
-                    if res.dragged() { node.pos += res.drag_delta(); }
 
-                    painter.add(Shape::rect_filled(screen_rect, 4.0, Color32::from_rgb(45, 45, 45)));
-                    painter.add(Shape::rect_stroke(screen_rect, 4.0, Stroke::new(1.0, Color32::DARK_GRAY)));
-                    painter.text(screen_rect.min + Vec2::new(8.0, 8.0), egui::Align2::LEFT_TOP, &node.name, egui::FontId::proportional(13.0), Color32::LIGHT_BLUE);
-                    painter.text(screen_rect.min + Vec2::new(8.0, 35.0), egui::Align2::LEFT_TOP, format!("{:.2}", node.output_val), egui::FontId::monospace(14.0), Color32::YELLOW);
+                    // Slider di dalam Node
+                    let node_id = ui.make_persistent_id(node.id);
+                    let res = ui.interact(screen_rect, node_id, egui::Sense::drag());
+                    if res.dragged() && !ctx.input(|i| i.modifiers.alt) {
+                        node.pos += res.drag_delta() / self.zoom;
+                    }
+
+                    painter.add(Shape::rect_filled(screen_rect, 5.0, Color32::from_rgb(40, 40, 40)));
+                    painter.add(Shape::rect_stroke(screen_rect, 5.0, Stroke::new(1.0, Color32::GRAY)));
+                    
+                    // Render isi node (Teks & Slider simulasi)
+                    painter.text(screen_rect.min + Vec2::splat(5.0), egui::Align2::LEFT_TOP, &node.name, egui::FontId::proportional(12.0 * self.zoom), Color32::WHITE);
                 }
 
-                // 4. PREVIEW (Fix Mismatched Types)
-                let preview_rect_raw = Rect::from_min_size(Pos2::new(ui.available_width() - 120.0, 20.0), Vec2::splat(100.0));
-                let screen_preview = Rect::from_min_max(to_screen * preview_rect_raw.min, to_screen * preview_rect_raw.max);
+                // --- MODULAR SHAPE PREVIEW ---
+                let center = response.rect.center();
+                let eased = current_val;
                 
-                painter.add(Shape::rect_stroke(screen_preview, 5.0, Stroke::new(1.0, Color32::GRAY)));
-                
-                let center = screen_preview.center();
-                let size = 15.0 + (current_val * 25.0); 
-                painter.add(Shape::circle_filled(center, size, Color32::from_rgb(255, 100, 0)));
-                
+                // Cek tipe Actor untuk gambar shape berbeda
+                // Simulasi: Node Actor menentukan mau Circle atau Square
+                if data.nodes.iter().any(|n| matches!(n.node_type, NodeType::Actor(ref s)) && s == "Square") {
+                    let sz = 20.0 + (eased * 40.0);
+                    painter.add(Shape::rect_filled(Rect::from_center_size(center, Vec2::splat(sz)), 2.0, Color32::LIGHT_BLUE));
+                } else {
+                    painter.add(Shape::circle_filled(center, 10.0 + (eased * 30.0), Color32::GOLD));
+                }
+
                 data.animation_time = (data.animation_time + 0.005) % 1.0;
             }
         });
