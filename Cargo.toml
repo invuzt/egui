@@ -7,9 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Mengaktifkan wgpu untuk rendering dan android-native-activity untuk lifecycle
 eframe = { version = "0.27", default-features = false, features = [
-    "android-native-activity",
+    "android-native-activity", 
     "wgpu",
-    "persistence",
+    "persistence"
 ] }
