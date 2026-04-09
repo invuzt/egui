@@ -32,13 +32,20 @@ impl eframe::App for OdfizApp {
             });
         });
 
-        // --- MOD LIBRARY ---
-        egui::SidePanel::left("library").default_width(100.0).show(ctx, |ui| {
+        // --- MOD LIBRARY & CONTROLS ---
+        egui::SidePanel::left("library").default_width(110.0).show(ctx, |ui| {
             ui.add_space(20.0);
             ui.heading("📦 MODS");
-            if ui.button("+ Circle").clicked() { self.add_node(0); }
-            if ui.button("+ Square").clicked() { self.add_node(1); }
-            if ui.button("+ Sine").clicked() { self.add_node(2); }
+            ui.separator();
+            if ui.button("➕ Circle").clicked() { self.add_node(0); }
+            if ui.button("➕ Square").clicked() { self.add_node(1); }
+            if ui.button("➕ Sine").clicked() { self.add_node(2); }
+            
+            ui.add_space(30.0);
+            ui.heading("🛠 EDIT");
+            ui.separator();
+            if ui.button("⟲ Undo").clicked() { self.undo_action(); }
+            if ui.button("🗑 Clear All").clicked() { self.clear_all(); }
         });
 
         // --- EDITOR CANVAS ---
@@ -46,21 +53,20 @@ impl eframe::App for OdfizApp {
             let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
             
             if let Ok(mut data) = self.state.try_lock() {
-                // Handle Zoom & Pan manual
                 let zoom_delta = ctx.input(|i| i.zoom_delta());
                 data.zoom *= zoom_delta;
                 if response.dragged_by(egui::PointerButton::Secondary) { data.pan += response.drag_delta(); }
 
-                // Tarik variabel ke lokal untuk menghindari Borrow Conflict
                 let current_zoom = data.zoom;
                 let current_pan = data.pan;
                 let time = data.animation_time;
 
-                let base_rect = Rect::from_min_size(Pos2::ZERO, response.rect.size());
-                let transformed_rect = response.rect.translate(current_pan);
-                let to_screen = eframe::emath::RectTransform::from_to(base_rect, transformed_rect);
+                let to_screen = eframe::emath::RectTransform::from_to(
+                    Rect::from_min_size(Pos2::ZERO, response.rect.size()),
+                    response.rect.translate(current_pan),
+                );
 
-                // A. Kabel Bezier
+                // A. Gambar Kabel
                 for conn in &data.connections {
                     let from_node = data.active_nodes.iter().find(|n| n.id == conn.from_node);
                     let to_node = data.active_nodes.iter().find(|n| n.id == conn.to_node);
@@ -74,7 +80,8 @@ impl eframe::App for OdfizApp {
                     }
                 }
 
-                // B. Nodes
+                // B. Nodes dengan Tombol Delete
+                let mut node_to_delete = None;
                 for node in &mut data.active_nodes {
                     node.current_value = self.registry.available[node.mod_index].execute(time);
                     let scaled_size = Vec2::new(120.0, 50.0) * current_zoom;
@@ -83,11 +90,28 @@ impl eframe::App for OdfizApp {
                     let node_res = ui.interact(screen_rect, ui.make_persistent_id(node.id), egui::Sense::drag());
                     if node_res.dragged() { node.pos += node_res.drag_delta() / current_zoom; }
 
-                    painter.add(Shape::rect_filled(screen_rect, 4.0, Color32::from_rgb(50, 50, 50)));
+                    painter.add(Shape::rect_filled(screen_rect, 4.0, Color32::from_rgb(45, 45, 45)));
+                    
+                    // Tombol Delete (X) di pojok kanan atas node
+                    let del_rect = Rect::from_min_size(screen_rect.right_top() - Vec2::new(20.0, 0.0), Vec2::splat(20.0));
+                    let del_res = ui.interact(del_rect, ui.make_persistent_id(format!("del_{}", node.id)), egui::Sense::click());
+                    
+                    painter.add(Shape::circle_filled(del_rect.center(), 8.0, if del_res.hovered() { Color32::RED } else { Color32::from_gray(80) }));
+                    painter.text(del_rect.center(), egui::Align2::CENTER_CENTER, "×", egui::FontId::proportional(14.0), Color32::WHITE);
+
+                    if del_res.clicked() { node_to_delete = Some(node.id); }
+
                     painter.text(screen_rect.center(), egui::Align2::CENTER_CENTER, 
                                  &self.registry.available[node.mod_index].name(), 
                                  egui::FontId::proportional(12.0 * current_zoom), Color32::WHITE);
                 }
+
+                // Eksekusi hapus jika ada yang diklik
+                if let Some(id) = node_to_delete {
+                    data.active_nodes.retain(|n| n.id != id);
+                    data.connections.retain(|c| c.from_node != id && c.to_node != id);
+                }
+
                 data.animation_time = (data.animation_time + 0.005) % 1.0;
             }
         });
@@ -98,11 +122,29 @@ impl eframe::App for OdfizApp {
 impl OdfizApp {
     fn add_node(&mut self, mod_idx: usize) {
         if let Ok(mut data) = self.state.try_lock() {
-            let id = data.active_nodes.len() as u64;
+            let id = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
             data.active_nodes.push(crate::state::ActiveNode {
                 id, mod_index: mod_idx, pos: Pos2::new(50.0, 50.0), current_value: 0.0,
             });
-            if id > 0 { data.connections.push(crate::state::Connection { from_node: id-1, to_node: id }); }
+            // Auto connect sederhana ke node terakhir
+            if data.active_nodes.len() > 1 {
+                let from = data.active_nodes[data.active_nodes.len() - 2].id;
+                data.connections.push(crate::state::Connection { from_node: from, to_node: id });
+            }
+        }
+    }
+
+    fn undo_action(&mut self) {
+        if let Ok(mut data) = self.state.try_lock() {
+            data.active_nodes.pop();
+            data.connections.pop();
+        }
+    }
+
+    fn clear_all(&mut self) {
+        if let Ok(mut data) = self.state.try_lock() {
+            data.active_nodes.clear();
+            data.connections.clear();
         }
     }
 }
