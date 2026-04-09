@@ -1,17 +1,17 @@
+#![cfg(target_os = "android")]
+
 use eframe::egui;
 
 #[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use eframe::NativeOptions;
+fn android_main(app: eframe::winit::platform::android::activity::AndroidApp) {
+    let options = eframe::NativeOptions::default();
 
-    let options = NativeOptions::default();
-
-    eframe::run_native(
-        "Hello Egui",
+    // Gunakan run_android, bukan run_native
+    eframe::run_android(
+        app,
         options,
         Box::new(|_cc| Box::new(MyApp::default())),
-        app,
-    );
+    ).unwrap();
 }
 
 struct MyApp {
@@ -27,15 +27,17 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Odfiz Hello World");
-            ui.add_space(10.0);
-            ui.horizontal(|ui| {
-                ui.label("Nama: ");
-                ui.text_edit_singleline(&mut self.name);
+            ui.vertical_centered(|ui| {
+                ui.heading("Odfiz Hello World");
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    ui.label("Nama: ");
+                    ui.text_edit_singleline(&mut self.name);
+                });
+                if ui.button("Proses").clicked() {
+                    self.name = "Berhasil!".to_owned();
+                }
             });
-            if ui.button("Proses").clicked() {
-                self.name = "Berhasil!".to_owned();
-            }
         });
     }
 }

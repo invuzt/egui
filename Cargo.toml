@@ -7,7 +7,4 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# eframe dengan fitur minimal yang diperlukan
-eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu"] }
-# Kita butuh winit secara eksplisit untuk tipe AndroidApp
-winit = { version = "0.29", features = ["android-native-activity"] }
+eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu", "glow"] }
