@@ -1,17 +1,17 @@
-#![cfg(target_os = "android")]
-
 use eframe::egui;
+use android_activity::AndroidApp;
 
 #[no_mangle]
-fn android_main(app: eframe::winit::platform::android::activity::AndroidApp) {
-    let options = eframe::NativeOptions::default();
-
-    // Gunakan run_android, bukan run_native
-    eframe::run_android(
-        app,
+fn android_main(app: AndroidApp) {
+    let mut options = eframe::NativeOptions::default();
+    
+    // Di eframe 0.27, app dimasukkan ke renderer_init_closure atau lewat cara ini:
+    eframe::run_native(
+        "Hello Egui",
         options,
         Box::new(|_cc| Box::new(MyApp::default())),
-    ).unwrap();
+        app,
+    );
 }
 
 struct MyApp {
@@ -30,12 +30,10 @@ impl eframe::App for MyApp {
             ui.vertical_centered(|ui| {
                 ui.heading("Odfiz Hello World");
                 ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.label("Nama: ");
-                    ui.text_edit_singleline(&mut self.name);
-                });
-                if ui.button("Proses").clicked() {
-                    self.name = "Berhasil!".to_owned();
+                ui.label(format!("Halo, {}!", self.name));
+                ui.text_edit_singleline(&mut self.name);
+                if ui.button("Klik").clicked() {
+                    self.name = "Build Berhasil!".to_owned();
                 }
             });
         });

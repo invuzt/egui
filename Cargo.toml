@@ -7,4 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu", "glow"] }
+# Tambahkan ini agar tipe AndroidApp jelas
+android-activity = { version = "0.5", features = ["native-activity"] }
+eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu"] }
