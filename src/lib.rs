@@ -1,11 +1,11 @@
 #![cfg(target_os = "android")]
 use eframe::egui;
 
+// Ambil AndroidApp langsung dari crate-nya, bukan lewat eframe
 #[no_mangle]
-fn android_main(app: eframe::winit::platform::android::activity::AndroidApp) {
-    let mut options = eframe::NativeOptions::default();
-    
-    // Kita berikan closure kosong untuk memastikan renderer siap
+fn android_main(app: android_activity::AndroidApp) {
+    let options = eframe::NativeOptions::default();
+
     eframe::run_native(
         "Odfiz App",
         options,
