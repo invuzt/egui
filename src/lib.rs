@@ -29,8 +29,8 @@ struct MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self { 
-            value: 0.5, 
-            checked: false,
+            value: 0.3, 
+            checked: true,
             color: egui::Color32::from_rgb(0, 255, 127),
         }
     }
@@ -39,43 +39,43 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.add_space(30.0);
+            let center = ui.max_rect().center();
+            
+            // --- AREA VISUAL (Latar Belakang) ---
+            let painter = ui.painter();
+            let dynamic_size = 30.0 + (self.value * 150.0);
+            
+            painter.circle_filled(center, dynamic_size, self.color);
+            
+            if self.checked {
+                painter.circle_stroke(center, dynamic_size + 10.0, egui::Stroke::new(2.0, egui::Color32::WHITE));
+            }
 
-                // 1. SLIDER (Tanpa Label Teks)
-                ui.add(egui::Slider::new(&mut self.value, 0.0..=1.0).show_value(false));
-                
+            // --- AREA KONTROL (Diatur ke Bawah Layar) ---
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+                ui.add_space(40.0); // Margin bawah
+
+                // Row untuk Color Picker dan Toggle
+                ui.horizontal(|ui| {
+                    ui.add_space(ui.available_width() / 4.0);
+                    ui.color_edit_button_srgba(&mut self.color);
+                    
+                    ui.add_space(20.0);
+                    
+                    let (rect, response) = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click());
+                    if response.clicked() { self.checked = !self.checked; }
+                    let toggle_col = if self.checked { egui::Color32::LIGHT_BLUE } else { egui::Color32::GRAY };
+                    ui.painter().rect_filled(rect, 15.0, toggle_col);
+                });
+
                 ui.add_space(20.0);
 
-                // 2. CHECKBOX MANUAL (Tanpa Teks)
-                let (rect, response) = ui.allocate_exact_size(egui::vec2(60.0, 30.0), egui::Sense::click());
-                if response.clicked() {
-                    self.checked = !self.checked;
-                }
-                let toggle_col = if self.checked { egui::Color32::LIGHT_BLUE } else { egui::Color32::GRAY };
-                ui.painter().rect_filled(rect, 15.0, toggle_col);
+                // Slider (Full width di bawah)
+                ui.add(egui::Slider::new(&mut self.value, 0.0..=1.0)
+                    .show_value(false)
+                    .trailing_fill(true));
 
                 ui.add_space(20.0);
-
-                // 3. COLOR PICKER
-                ui.color_edit_button_srgba(&mut self.color);
-
-                ui.add_space(40.0);
-
-                // 4. DYNAMIC GRAPHIC
-                let painter = ui.painter();
-                let center = ui.max_rect().center();
-                let dynamic_size = 50.0 + (self.value * 100.0);
-                
-                // Gambar Lingkaran Utama
-                painter.circle_filled(center, dynamic_size, self.color);
-
-                // Gambar Garis Dekoratif (Memperbaiki error_path)
-                let stroke = egui::Stroke::new(2.0, egui::Color32::WHITE);
-                painter.line_segment(
-                    [center + egui::vec2(-100.0, 150.0), center + egui::vec2(100.0, 150.0)],
-                    stroke
-                );
             });
         });
         ctx.request_repaint();
