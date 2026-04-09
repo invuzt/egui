@@ -14,94 +14,87 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         "Zamera Alpha",
         options,
         Box::new(|cc| {
-            // FIX KECILKAN SKALA: Diubah dari 2.5 menjadi 1.8 agar muat banyak widget
             cc.egui_ctx.set_pixels_per_point(1.8); 
+            setup_custom_fonts(&cc.egui_ctx); // MUAT FONT DI SINI
             Box::new(ZameraApp::default())
         }),
     );
 }
 
+fn setup_custom_fonts(ctx: &egui::Context) {
+    let mut fonts = egui::FontDefinitions::default();
+
+    // Memasukkan file font ke dalam binary saat compile
+    // Pastikan path ../assets/font.ttf benar!
+    let font_data = include_bytes!("../assets/font.ttf");
+
+    fonts.font_data.insert(
+        "my_font".to_owned(),
+        egui::FontData::from_static(font_data),
+    );
+
+    // Prioritaskan font ini untuk teks biasa (Proportional)
+    fonts.families.entry(egui::FontFamily::Proportional)
+        .or_default()
+        .insert(0, "my_font".to_owned());
+
+    // Dan untuk teks terminal/kode (Monospace)
+    fonts.families.entry(egui::FontFamily::Monospace)
+        .or_default()
+        .push("my_font".to_owned());
+
+    ctx.set_fonts(fonts);
+}
+
 struct ZameraApp {
     zoom_level: f32,
-    checked: bool,
-    filter_color: egui::Color32,
-    is_capturing: bool,
+    color: egui::Color32,
 }
 
 impl Default for ZameraApp {
     fn default() -> Self {
         Self {
             zoom_level: 0.3,
-            checked: true,
-            filter_color: egui::Color32::from_rgb(0, 255, 127), // Warna Default Odfiz
-            is_capturing: false,
+            color: egui::Color32::from_rgb(0, 255, 127),
         }
     }
 }
 
 impl eframe::App for ZameraApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // TATA LETAK: Gunakan Layout::bottom_up agar kontrol ada di bawah
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.spacing_mut().item_spacing = egui::vec2(10.0, 10.0);
+            ui.vertical_centered(|ui| {
+                ui.add_space(20.0);
+                // SEKARANG TEKS INI AKAN MUNCUL!
+                ui.heading("ODFIZ ZAMERA"); 
+                ui.label("Alpha Preview v0.1");
 
-            // --- AREA VIEWER KAMERA (Di Tengah, Ukuran Dinamis) ---
-            ui.add_space(30.0);
-            let viewer_rect = ui.available_rect_before_wrap();
-            let viewer_painter = ui.painter();
-            
-            // Kotak ini nanti akan diisi gambar dari kamera
-            viewer_painter.rect_filled(
-                egui::Rect::from_center_size(viewer_rect.center(), egui::vec2(250.0, 250.0)),
-                5.0,
-                self.filter_color.linear_multiply(0.3) // Filter transparansi
-            );
+                let viewer_rect = ui.available_rect_before_wrap();
+                ui.painter().rect_filled(
+                    egui::Rect::from_center_size(viewer_rect.center(), egui::vec2(280.0, 280.0)),
+                    10.0,
+                    self.color.linear_multiply(0.2)
+                );
 
-            // Tanda Bidik (Crosshair) Kamera
-            let ch_size = 20.0;
-            let ch_stroke = egui::Stroke::new(1.0, egui::Color32::WHITE);
-            viewer_painter.line_segment([viewer_rect.center() - egui::vec2(ch_size, 0.0), viewer_rect.center() + egui::vec2(ch_size, 0.0)], ch_stroke);
-            viewer_painter.line_segment([viewer_rect.center() - egui::vec2(0.0, ch_size), viewer_rect.center() + egui::vec2(0.0, ch_size)], ch_stroke);
-
-
-            // --- AREA KONTROL JEMPOL (Di Bawah Layar) ---
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                ui.add_space(20.0); // Margin bawah
-
-                // Row untuk Tombol Capture & Color Picker
-                ui.horizontal(|ui| {
-                    ui.add_space(ui.available_width() / 2.0 - 25.0); // Center
-
-                    // Tombol Ambil Gambar (Visual Murni)
-                    let cap_stroke = if self.is_capturing { egui::Stroke::new(3.0, egui::Color32::RED) } else { egui::Stroke::new(2.0, egui::Color32::WHITE) };
-                    let (cap_rect, cap_response) = ui.allocate_exact_size(egui::vec2(50.0, 50.0), egui::Sense::click());
-                    ui.painter().circle_stroke(cap_rect.center(), 23.0, cap_stroke);
-                    if cap_response.clicked() { self.is_capturing = true; }
-
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+                    ui.add_space(30.0);
+                    
+                    // Label Slider
+                    ui.label(format!("Zoom: {:.1}x", 1.0 + self.zoom_level * 4.0));
+                    ui.add(egui::Slider::new(&mut self.zoom_level, 0.0..=1.0).show_value(false));
+                    
                     ui.add_space(20.0);
-                    // Color Picker (Sebagai Filter)
-                    ui.color_edit_button_srgba(&mut self.filter_color);
+                    
+                    // Tombol Preset Warna
+                    ui.horizontal(|ui| {
+                        ui.add_space(ui.available_width()/2.0 - 45.0);
+                        for (name, c) in [("G", egui::Color32::GREEN), ("R", egui::Color32::RED), ("B", egui::Color32::BLUE)] {
+                            if ui.button(name).clicked() { self.color = c; }
+                        }
+                    });
                 });
-
-                ui.add_space(15.0);
-
-                // Grid untuk Slider & Spinner (Muat karena skala dikecilkan)
-                egui::Grid::new("controls_grid").spacing([15.0, 15.0]).show(ui, |ui| {
-                    // Slider Zoom
-                    ui.add(egui::Slider::new(&mut self.zoom_level, 0.0..=1.0).show_value(false).trailing_fill(true));
-                    // Spinner Loading (Indikator Kamera Aktif)
-                    ui.add(egui::Spinner::new());
-                    ui.end_row();
-                });
-
-                ui.add_space(10.0);
             });
         });
-
-        if self.is_capturing {
-            // Logika reset tombol capture setelah diklik
-            self.is_capturing = false;
-            ctx.request_repaint();
-        }
+        ctx.request_repaint();
     }
 }
