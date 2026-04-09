@@ -6,6 +6,11 @@ pub struct OdfizApp {
     pub current_page: String,
 }
 
+// Helper untuk warna TUI agar tidak ngetik RGB terus
+const TUI_CYAN: egui::Color32 = egui::Color32::from_rgb(0, 255, 255);
+const TUI_YELLOW: egui::Color32 = egui::Color32::from_rgb(255, 255, 0);
+const TUI_BLACK: egui::Color32 = egui::Color32::from_rgb(10, 10, 10);
+
 impl OdfizApp {
     pub fn new(state: SharedState) -> Self {
         Self { 
@@ -18,17 +23,13 @@ impl OdfizApp {
 impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut show_panel = true;
-        let mut dark_mode = true;
         
         if let Ok(data) = self.state.try_lock() {
             show_panel = data.show_panel;
-            dark_mode = data.dark_mode;
         }
 
-        // Paksa tema gelap agar aura terminal terasa
         ctx.set_visuals(egui::Visuals::dark());
 
-        // --- SIDEBAR (Ramping & Rata Kiri) ---
         if show_panel {
             egui::SidePanel::left("sidebar").default_width(110.0).resizable(false).show(ctx, |ui| {
                 ui.add_space(45.0);
@@ -40,7 +41,6 @@ impl eframe::App for OdfizApp {
             });
         }
 
-        // --- MAIN PANEL ---
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(45.0);
             
@@ -54,40 +54,40 @@ impl eframe::App for OdfizApp {
             ui.separator();
 
             if self.current_page == "Settings" {
-                ui.label("Settings Page Content");
+                ui.label("Settings Page");
             } else if let Ok(data) = self.state.try_lock() {
                 
-                // --- SIMULASI TUI BOX 1: STATUS ---
+                // BOX 1: STATUS
                 egui::Frame::group(ui.style())
-                    .fill(egui::Color32::from_rgb(10, 10, 10))
-                    .stroke(egui::Stroke::new(1.0, egui::Color32::YELLOW))
+                    .fill(TUI_BLACK)
+                    .stroke(egui::Stroke::new(1.0, TUI_YELLOW))
                     .show(ui, |ui| {
                         ui.set_width(ui.available_width());
-                        ui.label(egui::RichText::new(" [ ENGINE STATUS ] ").color(egui::Color32::YELLOW).strong());
+                        ui.label(egui::RichText::new(" [ ENGINE STATUS ] ").color(TUI_YELLOW).strong());
                         ui.label(egui::RichText::new(format!(" STATUS : {}", data.server_status)).monospace());
                     });
 
                 ui.add_space(10.0);
 
-                // --- SIMULASI TUI BOX 2: STATS ---
+                // BOX 2: STATS (Ganti egui::Color32::CYAN jadi TUI_CYAN)
                 egui::Frame::group(ui.style())
-                    .fill(egui::Color32::from_rgb(10, 10, 10))
-                    .stroke(egui::Stroke::new(1.0, egui::Color32::CYAN))
+                    .fill(TUI_BLACK)
+                    .stroke(egui::Stroke::new(1.0, TUI_CYAN))
                     .show(ui, |ui| {
                         ui.set_width(ui.available_width());
-                        ui.label(egui::RichText::new(" [ STATS ] ").color(egui::Color32::CYAN).strong());
+                        ui.label(egui::RichText::new(" [ STATS ] ").color(TUI_CYAN).strong());
                         ui.label(egui::RichText::new(format!(" HITS   : {}", data.api_hits)).monospace());
                         ui.label(egui::RichText::new(" UPTIME : 100% ").monospace());
                     });
 
                 ui.add_space(10.0);
 
-                // --- SIMULASI TUI BOX 3: LOGS (SCROLLABLE) ---
+                // BOX 3: LOGS
                 ui.label(egui::RichText::new(" [ ACCESS_LOG ] ").strong());
                 egui::Frame::canvas(ui.style())
                     .fill(egui::Color32::BLACK)
                     .show(ui, |ui| {
-                        egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                        egui::ScrollArea::vertical().max_height(250.0).show(ui, |ui| {
                             ui.set_width(ui.available_width());
                             for log in data.logs.iter().rev().take(15) {
                                 ui.label(egui::RichText::new(format!(" > {} | {}", log.time, log.ip))
