@@ -34,31 +34,34 @@ impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(egui::Visuals::dark());
 
-        // 1. Bagian Atas: Viewer (Preview)
         egui::TopBottomPanel::top("viewer_panel").default_height(200.0).show(ctx, |ui| {
             viewer::show(ui, &self.state, &self.registry);
         });
 
-        // 2. Bagian Bawah: Timeline
         egui::TopBottomPanel::bottom("timeline_panel").default_height(80.0).show(ctx, |ui| {
             timeline::show(ui, &self.state);
         });
 
-        // 3. Bagian Kiri: Sidebar (Daftar Mods)
         egui::SidePanel::left("mods_panel").default_width(120.0).show(ctx, |ui| {
             ui.add_space(10.0);
             ui.heading("📦 MODS");
             ui.separator();
+            
+            // FIX: Simpan index yang diklik agar tidak meminjam 'self' di dalam loop
+            let mut clicked_idx = None;
             egui::ScrollArea::vertical().show(ui, |ui| {
                 for (i, m) in self.registry.available.iter().enumerate() {
                     if ui.button(format!("+ {}", m.name())).clicked() {
-                        self.add_node(i);
+                        clicked_idx = Some(i);
                     }
                 }
             });
+
+            if let Some(idx) = clicked_idx {
+                self.add_node(idx);
+            }
         });
 
-        // 4. Tengah: Node Canvas (Editor)
         egui::CentralPanel::default().show(ctx, |ui| {
             canvas::show(ui, &self.state, &self.registry);
         });
