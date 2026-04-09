@@ -7,10 +7,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [profile.release]
-strip = true      # Menghapus simbol 
-debug
-opt-level = "z"   # Optimasi ukuran 
-(ultra-lite)
+strip = true
+lto = true
+panic = "abort"
+opt-level = "z"
 
 
 [dependencies]
