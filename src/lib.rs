@@ -7,7 +7,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {
-        builder.with_layout_guide(true);
         builder.with_android_app(app);
     }));
 
@@ -15,7 +14,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         "Odfiz Mini Gallery",
         options,
         Box::new(|cc| {
-            // Kita kecilkan skalanya agar muat banyak widget
             cc.egui_ctx.set_pixels_per_point(2.5); 
             Box::new(MiniGallery::default())
         }),
@@ -29,7 +27,7 @@ struct MiniGallery {
     animate: bool,
 }
 
-impl Default military::MiniGallery {
+impl Default for MiniGallery {
     fn default() -> Self {
         Self {
             scalar: 180.0,
@@ -40,7 +38,6 @@ impl Default military::MiniGallery {
     }
 }
 
-// Implementasi manual untuk MiniGallery agar tidak crash tanpa font
 impl eframe::App for MiniGallery {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -49,26 +46,22 @@ impl eframe::App for MiniGallery {
             ui.vertical_centered(|ui| {
                 ui.add_space(20.0);
 
-                // 1. Progress Bar (Visual Utama)
+                // 1. Progress Bar
                 let progress = self.scalar / 360.0;
                 ui.add(egui::ProgressBar::new(progress)
                     .animate(self.animate));
 
                 ui.add_space(10.0);
 
-                // 2. Grid Kontrol Kecil
+                // 2. Grid Kontrol
                 egui::Grid::new("mini_grid").spacing([20.0, 20.0]).show(ui, |ui| {
-                    // Slider tanpa label angka
                     ui.add(egui::Slider::new(&mut self.scalar, 0.0..=360.0).show_value(false));
-                    
-                    // Tombol Warna
                     ui.color_edit_button_srgba(&mut self.color);
                     ui.end_row();
 
-                    // Spinner (Visual loading)
                     ui.add(egui::Spinner::new());
                     
-                    // Checkbox Custom (Hanya kotak)
+                    // Checkbox Custom
                     let (rect, response) = ui.allocate_exact_size(egui::vec2(30.0, 30.0), egui::Sense::click());
                     if response.clicked() { self.boolean = !self.boolean; }
                     let fill = if self.boolean { self.color } else { egui::Color32::TRANSPARENT };
@@ -78,14 +71,14 @@ impl eframe::App for MiniGallery {
 
                 ui.add_space(20.0);
 
-                // 3. Area Gambar/Shape
+                // 3. Visual Object
                 let painter = ui.painter();
                 let rect = ui.max_rect();
-                let center = egui::pos2(rect.center().x, rect.center().y + 50.0);
+                let center = egui::pos2(rect.center().x, rect.center().y + 80.0);
                 
                 painter.rect_filled(
-                    egui::Rect::from_center_size(center, egui::vec2(80.0, 80.0)),
-                    self.scalar / 10.0, // Rounding berubah lewat slider
+                    egui::Rect::from_center_size(center, egui::vec2(100.0, 100.0)),
+                    self.scalar / 10.0,
                     self.color
                 );
             });
