@@ -3,24 +3,22 @@ use crate::state::SharedState;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, List, ListItem};
 use egui_ratatui::RataguiBackend;
-// Lokasi import sedikit berbeda di v0.1.4
 use soft_ratatui::embedded_graphics_unicodefonts::mono_8x13_atlas;
 use soft_ratatui::{EmbeddedGraphics, SoftBackend};
 
 pub struct OdfizApp {
     pub state: SharedState,
     pub current_page: String,
-    // Gunakan spesifik backend agar compiler tidak bingung
+    // Gunakan full path untuk menghindari ambiguitas tipe data
     pub terminal: Terminal<RataguiBackend<EmbeddedGraphics>>,
 }
 
 impl OdfizApp {
     pub fn new(state: SharedState) -> Self {
         let font = mono_8x13_atlas();
-        // Di v0.1.4, format inisialisasinya seperti ini
         let soft_backend = SoftBackend::<EmbeddedGraphics>::new(45, 60, font, None, None);
         let backend = RataguiBackend::new("odfiz_term", soft_backend);
-        let terminal = Terminal::new(backend).unwrap();
+        let terminal = Terminal::new(backend).expect("Gagal inisialisasi terminal");
 
         Self { 
             state, 
@@ -71,8 +69,9 @@ impl eframe::App for OdfizApp {
                 });
             } else {
                 if let Ok(data) = self.state.try_lock() {
-                    let _ = self.terminal.draw(|f| {
-                        let area = f.size(); // Di v0.1.4 gunakan .size() bukan .area()
+                    // Berikan tipe eksplisit pada closure parameter '|f|'
+                    let _ = self.terminal.draw(|f: &mut Frame<RataguiBackend<EmbeddedGraphics>>| {
+                        let area = f.size(); 
                         let chunks = Layout::default()
                             .direction(Direction::Vertical)
                             .constraints([
@@ -102,7 +101,7 @@ impl eframe::App for OdfizApp {
 
                         f.render_widget(
                             List::new(logs)
-                                .block(Block::default().borders(Borders::ALL).title(" ACCESS_LOG "))
+                                .block(Block::default().borders(Borders::ALL).title(" LOG "))
                                 .style(Style::default().fg(Color::Green)),
                             chunks[2],
                         );
