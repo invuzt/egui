@@ -5,8 +5,9 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 struct AppState {
-    status: String,
+    is_internet_online: bool,
     counter: u64,
+    // (Cable ID, Port In, Port Out)
     connections: Vec<(usize, usize, usize)>,
 }
 
@@ -15,11 +16,12 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     let state = Arc::new(Mutex::new(AppState {
-        status: "Disconnected".to_string(),
+        is_internet_online: false,
         counter: 0,
         connections: Vec::new(),
     }));
 
+    // Server Axum: Hanya hit kalau internet "online" (kabel dicolok)
     let server_state = state.clone();
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -29,8 +31,12 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
                     let s = server_state.clone();
                     move || async move {
                         let mut data = s.lock().await;
-                        data.counter += 1;
-                        "OK"
+                        if data.is_internet_online {
+                            data.counter += 1;
+                            "Signal Received"
+                        } else {
+                            "ERROR: NO CONNECTION"
+                        }
                     }
                 }));
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -64,61 +70,70 @@ impl eframe::App for OdfizApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(10.0);
-                ui.heading("ODFIZ CORE");
+                ui.heading("ODFIZ NETWORK CORE");
                 ui.separator();
             });
 
             if let Ok(mut data) = self.state.try_lock() {
-                ui.columns(2, |cols| {
+                // RENDER SOCKETS
+                ui.columns(3, |cols| {
                     cols[0].vertical_centered(|ui| {
-                        ui.label("SERVER");
-                        ui.add(Port::new(100usize));
+                        ui.label("SOURCE");
+                        ui.add(Port::new(10usize)); // Port 10: Internet Provider
                     });
                     cols[1].vertical_centered(|ui| {
-                        ui.label("MONITOR");
-                        ui.add(Port::new(200usize));
+                        ui.label("SOCKET A");
+                        ui.add(Port::new(20usize)); // Port 20: Server
+                    });
+                    cols[2].vertical_centered(|ui| {
+                        ui.label("SOCKET B");
+                        ui.add(Port::new(30usize)); // Port 30: UI Monitor
                     });
                 });
 
-                ui.add_space(30.0);
+                ui.add_space(40.0);
 
-                // FIX 1: Tambahkan 'mut' pada res
+                // LOGIKA KABEL
                 if data.connections.is_empty() {
-                    let mut res = ui.add(Cable::new(0, Plug::to(100usize), Plug::unplugged()));
+                    // Kabel stand-by di Source
+                    let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()));
                     if let Some(p_id) = res.out_plug().connected_to() {
-                        if *p_id.downcast_ref::<usize>().unwrap() == 200 {
-                            data.connections.push((0, 100, 200));
-                            data.status = "LINK ACTIVE".to_string();
-                        }
+                        let target = *p_id.downcast_ref::<usize>().unwrap();
+                        data.connections.push((0, 10, target));
                     }
                 }
 
-                // FIX 2: Gunakan flag agar tidak mutasi data di dalam loop iterasi
                 let mut should_disconnect = false;
                 for (id, a, b) in data.connections.iter() {
                     let mut res = ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)));
-                    if res.out_plug().disconnected() {
+                    
+                    // PENCET PUTUS: res.clicked() menangkap tap pada kabel
+                    if res.clicked() {
                         should_disconnect = true;
                     }
                 }
 
                 if should_disconnect {
                     data.connections.clear();
-                    data.status = "Disconnected".to_string();
                 }
 
-                ui.add_space(20.0);
+                // STATUS UPDATE BERDASARKAN KONEKSI
+                // Cek apakah ada kabel yang terhubung ke Socket A atau B
+                data.is_internet_online = data.connections.iter().any(|&(_, _, b)| b == 20 || b == 30);
+
+                // UI DISPLAY
                 ui.group(|ui| {
                     ui.set_width(ui.available_width());
-                    if !data.connections.is_empty() {
-                        ui.label(format!("STATUS: {}", data.status));
-                        ui.label(format!("PULSE HITS: {}", data.counter));
+                    if data.is_internet_online {
+                        ui.colored_label(egui::Color32::GREEN, "📡 INTERNET: ONLINE");
+                        ui.label(format!("Traffic: {} packets", data.counter));
                     } else {
-                        ui.colored_label(egui::Color32::LIGHT_RED, "⚠ DATA LINK SEVERED");
+                        ui.colored_label(egui::Color32::RED, "🚫 INTERNET: DEAD");
+                        ui.label("Connect SOURCE to a SOCKET to start traffic.");
                     }
                 });
             }
         });
-        ctx.request_repaint_after(std::time::Duration::from_millis(200));
+        ctx.request_repaint_after(std::time::Duration::from_millis(100));
     }
 }
