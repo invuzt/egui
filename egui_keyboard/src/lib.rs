@@ -1,6 +1,4 @@
-use egui::{
-    Align2, Context, Event, Frame, Id, Modifiers, Order, Ui, Window,
-};
+use egui::{Align2, Context, Event, Frame, Id, Modifiers, Ui, Window, Vec2, Button};
 use std::collections::VecDeque;
 
 pub mod layouts {
@@ -8,11 +6,20 @@ pub mod layouts {
     pub struct KeyboardLayout;
     impl KeyboardLayout {
         pub fn get_keys(&self, upper: bool) -> Vec<Vec<Key>> {
-            if upper {
-                vec![vec![Key::Text("Q"), Key::Text("W"), Key::Text("E"), Key::Text("R"), Key::Text("T")], vec![Key::Upper, Key::Backspace]]
+            let keys = if upper {
+                vec![
+                    vec![Key::Text("1"), Key::Text("2"), Key::Text("3")],
+                    vec![Key::Text("Q"), Key::Text("W"), Key::Text("E")],
+                    vec![Key::Upper, Key::Backspace]
+                ]
             } else {
-                vec![vec![Key::Text("q"), Key::Text("w"), Key::Text("e"), Key::Text("r"), Key::Text("t")], vec![Key::Upper, Key::Backspace]]
-            }
+                vec![
+                    vec![Key::Text("1"), Key::Text("2"), Key::Text("3")],
+                    vec![Key::Text("q"), Key::Text("w"), Key::Text("e")],
+                    vec![Key::Upper, Key::Backspace]
+                ]
+            };
+            keys
         }
     }
     impl Default for KeyboardLayout { fn default() -> Self { Self } }
@@ -22,10 +29,9 @@ pub enum Key { Text(&'static str), Backspace, Upper }
 
 #[derive(Default)]
 pub struct Keyboard {
-    input_widget: Option<Id>,
     events: VecDeque<Event>,
     upper: bool,
-    keyboard_layout: crate::layouts::KeyboardLayout,
+    layout: crate::layouts::KeyboardLayout,
     needed: u32,
 }
 
@@ -35,45 +41,35 @@ impl Keyboard {
     }
 
     pub fn show(&mut self, ctx: &Context) {
-        // Perbaikan: Pakai wants_keyboard_input() sesuai saran rustc
-        if ctx.wants_keyboard_input() {
-            self.needed = 20;
-            self.input_widget = ctx.memory(|m| m.focused());
-        } else {
-            self.needed = self.needed.saturating_sub(1);
-        }
+        if ctx.wants_keyboard_input() { self.needed = 20; }
+        else { self.needed = self.needed.saturating_sub(1); }
 
         if self.needed > 0 {
-            let keys = self.keyboard_layout.get_keys(self.upper);
-            
-            // Perbaikan: Style & Order disesuaikan dengan versi 0.27.2
             Window::new("Keyboard")
                 .frame(Frame::none().fill(ctx.style().visuals.extreme_bg_color))
                 .anchor(Align2::CENTER_BOTTOM, [0., 0.])
-                .collapsible(false)
-                .resizable(false)
-                .title_bar(false)
-                .show(ctx, |ui: &mut Ui| { // Tambahkan tipe data eksplisit
-                    ui.vertical(|ui: &mut Ui| {
-                        for row in keys {
-                            ui.horizontal(|ui: &mut Ui| {
+                .collapsible(false).resizable(false).title_bar(false)
+                .show(ctx, |ui: &mut Ui| {
+                    ui.vertical_centered(|ui| {
+                        for row in self.layout.get_keys(self.upper) {
+                            ui.horizontal(|ui| {
                                 for key in row {
-                                    match key {
-                                        Key::Text(t) => if ui.button(t).clicked() {
-                                            self.events.push_back(Event::Text(t.to_string()));
-                                        },
-                                        Key::Backspace => if ui.button("⏴").clicked() {
-                                            self.events.push_back(Event::Key {
-                                                key: egui::Key::Backspace,
-                                                pressed: true,
-                                                repeat: false,
-                                                modifiers: Modifiers::NONE,
-                                                physical_key: None,
-                                            });
-                                        },
-                                        Key::Upper => if ui.button("⏶").clicked() {
-                                            self.upper = !self.upper;
-                                        },
+                                    // UKURAN TOMBOL RAKSASA (80x80 pixel)
+                                    let btn = Button::new(match key {
+                                        Key::Text(t) => t,
+                                        Key::Backspace => "DEL",
+                                        Key::Upper => "ABC",
+                                    }).min_size(Vec2::new(80.0, 80.0));
+
+                                    if ui.add(btn).clicked() {
+                                        match key {
+                                            Key::Text(t) => self.events.push_back(Event::Text(t.to_string())),
+                                            Key::Backspace => self.events.push_back(Event::Key {
+                                                key: egui::Key::Backspace, pressed: true, repeat: false,
+                                                modifiers: Modifiers::NONE, physical_key: None,
+                                            }),
+                                            Key::Upper => self.upper = !self.upper,
+                                        }
                                     }
                                 }
                             });
