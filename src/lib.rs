@@ -3,6 +3,7 @@ use eframe::egui;
 use egui_cable::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use std::time::Duration;
 
 struct AppState {
     is_internet_online: bool,
@@ -31,9 +32,9 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
                         let mut data = s.lock().await;
                         if data.is_internet_online {
                             data.counter += 1;
-                            "Signal OK"
+                            "Pulse OK"
                         } else {
-                            "NO INTERNET"
+                            "OFFLINE"
                         }
                     }
                 }));
@@ -52,6 +53,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         options,
         Box::new(|cc| {
             cc.egui_ctx.set_pixels_per_point(1.4);
+            // Matikan repaint terus-menerus. Hanya render saat input.
             Box::new(OdfizApp { state })
         }),
     );
@@ -68,12 +70,11 @@ impl eframe::App for OdfizApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(10.0);
             ui.vertical_centered(|ui| {
-                ui.heading(egui::RichText::new("ODFIZ NETWORK CORE").strong());
+                ui.heading("ODFIZ POWER SAVER");
                 ui.separator();
             });
 
             if let Ok(mut data) = self.state.try_lock() {
-                // Layout Port
                 ui.columns(3, |cols| {
                     cols[0].vertical_centered(|ui| { ui.label("SOURCE"); ui.add(Port::new(10usize)); });
                     cols[1].vertical_centered(|ui| { ui.label("SOCKET A"); ui.add(Port::new(20usize)); });
@@ -82,44 +83,45 @@ impl eframe::App for OdfizApp {
 
                 ui.add_space(30.0);
 
-                // Manajemen Kabel (Tanpa Custom Widget yang error)
                 if data.connections.is_empty() {
                     let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()));
                     if let Some(p_id) = res.out_plug().connected_to() {
                         let target = *p_id.downcast_ref::<usize>().unwrap();
                         data.connections.push((0, 10, target));
+                        ctx.request_repaint(); // Render sekali saat koneksi berubah
                     }
                 }
 
                 for (id, a, b) in data.connections.iter() {
-                    // Kabel standar saja biar aman
                     ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)));
                 }
 
                 ui.add_space(20.0);
 
-                // TOMBOL RESET / PUTUS KABEL
                 if !data.connections.is_empty() {
-                    if ui.add_sized([ui.available_width(), 40.0], egui::Button::new("✂ PUTUSKAN KONEKSI").fill(egui::Color32::from_rgb(150, 0, 0))).clicked() {
+                    if ui.add_sized([ui.available_width(), 40.0], egui::Button::new("✂ PUTUSKAN").fill(egui::Color32::from_rgb(150, 0, 0))).clicked() {
                         data.connections.clear();
+                        ctx.request_repaint(); // Render saat diputuskan
                     }
                 }
 
-                // Logika Internet Online
                 data.is_internet_online = data.connections.iter().any(|&(_, _, b)| b == 20 || b == 30);
 
                 ui.group(|ui| {
                     ui.set_width(ui.available_width());
                     if data.is_internet_online {
-                        ui.colored_label(egui::Color32::GREEN, "📡 STATUS: ONLINE");
-                        ui.label(format!("Traffic: {} pkts", data.counter));
+                        ui.colored_label(egui::Color32::GREEN, "📡 MODE: ACTIVE");
+                        ui.label(format!("Traffic: {} packets", data.counter));
+                        
+                        // HANYA REPAINT JIKA ONLINE (untuk update counter tiap 1 detik)
+                        ctx.request_repaint_after(Duration::from_secs(1));
                     } else {
-                        ui.colored_label(egui::Color32::RED, "🚫 STATUS: OFFLINE");
-                        ui.label("Sambungkan kabel dari SOURCE ke SOCKET.");
+                        ui.colored_label(egui::Color32::RED, "🚫 MODE: SLEEP (Baterai Irit)");
+                        // Saat offline, JANGAN panggil request_repaint sama sekali.
+                        // CPU akan benar-benar idle/tidur.
                     }
                 });
             }
         });
-        ctx.request_repaint_after(std::time::Duration::from_millis(100));
     }
 }
