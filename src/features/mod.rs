@@ -7,7 +7,6 @@ pub trait OdfizModule {
 
 pub mod counter_feature;
 pub mod crud_feature;
-// Tambah mod baru di sini kalau ada file baru
 
 macro_rules! register_modules {
     ($($mod_name:ident::$struct_name:ident),*) => {
@@ -19,7 +18,6 @@ macro_rules! register_modules {
     };
 }
 
-// CARA PAKAINYA: Cukup sebutkan nama_file::NamaStruct
 register_modules!(
     counter_feature::CounterFeature,
     crud_feature::CrudFeature
