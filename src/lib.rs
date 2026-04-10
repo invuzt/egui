@@ -1,44 +1,14 @@
 #![cfg(target_os = "android")]
 use eframe::egui;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use std::time::Duration;
 
 struct AppState {
-    is_active: bool,
     counter: u64,
+    last_action: String,
 }
 
 #[no_mangle]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let state = Arc::new(Mutex::new(AppState {
-        is_active: false,
-        counter: 0,
-    }));
-
-    let server_state = state.clone();
-    std::thread::spawn(move || {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let app = axum::Router::new()
-                .route("/hit", axum::routing::get({
-                    let s = server_state.clone();
-                    move || async move {
-                        let mut data = s.lock().await;
-                        if data.is_active {
-                            data.counter += 1;
-                            "Data OK"
-                        } else {
-                            "OFFLINE"
-                        }
-                    }
-                }));
-            let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-            axum::serve(listener, app).await.unwrap();
-        });
-    });
 
     let mut options = eframe::NativeOptions::default();
     options.event_loop_builder = Some(Box::new(move |builder| {
@@ -46,17 +16,24 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Minimalist",
+        "Odfiz Pure Native",
         options,
         Box::new(|cc| {
+            // Skala UI agar nyaman di jempol
             cc.egui_ctx.set_pixels_per_point(1.5);
-            Box::new(OdfizApp { state })
+            
+            Box::new(OdfizApp {
+                state: AppState {
+                    counter: 0,
+                    last_action: "Ready".to_string(),
+                },
+            })
         }),
     );
 }
 
 struct OdfizApp {
-    state: Arc<Mutex<AppState>>,
+    state: AppState,
 }
 
 impl eframe::App for OdfizApp {
@@ -65,42 +42,43 @@ impl eframe::App for OdfizApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(20.0);
-                ui.heading("ODFIZ MONITOR");
-                ui.add_space(10.0);
-                ui.separator();
                 ui.add_space(30.0);
+                ui.heading(egui::RichText::new("ODFIZ PURE NATIVE").strong());
+                ui.label("Reactive Mode: ON (0% CPU Idle)");
+                ui.separator();
+                ui.add_space(40.0);
 
-                if let Ok(mut data) = self.state.try_lock() {
-                    // Monitor Status
-                    let color = if data.is_active { egui::Color32::GREEN } else { egui::Color32::RED };
-                    let status_text = if data.is_active { "SYSTEM ACTIVE" } else { "SYSTEM IDLE" };
+                // Display Monitor
+                ui.group(|ui| {
+                    ui.set_width(280.0);
+                    ui.add_space(15.0);
+                    ui.label(egui::RichText::new("MONITOR").size(14.0).color(egui::Color32::GRAY));
+                    ui.heading(format!("Count: {}", self.state.counter));
+                    ui.label(format!("Last Event: {}", self.state.last_action));
+                    ui.add_space(15.0);
+                });
 
-                    ui.group(|ui| {
-                        ui.set_width(250.0);
-                        ui.add_space(10.0);
-                        ui.label(egui::RichText::new(status_text).color(color).strong().size(20.0));
-                        ui.label(format!("Incoming Packets: {}", data.counter));
-                        ui.add_space(10.0);
-                    });
+                ui.add_space(50.0);
 
-                    ui.add_space(40.0);
+                // Main Action Button
+                // Tanpa request_repaint manual, egui otomatis repaint saat tombol diklik
+                if ui.add_sized([220.0, 70.0], egui::Button::new(egui::RichText::new("➕ ADD DATA").size(20.0)).fill(egui::Color32::from_rgb(30, 80, 150))).clicked() {
+                    self.state.counter += 1;
+                    self.state.last_action = "Data Added".to_string();
+                }
 
-                    // Toggle Button
-                    let btn_label = if data.is_active { "🛑 STOP MONITOR" } else { "▶️ START MONITOR" };
-                    let btn_color = if data.is_active { egui::Color32::from_rgb(150, 0, 0) } else { egui::Color32::from_rgb(0, 100, 0) };
+                ui.add_space(20.0);
 
-                    if ui.add_sized([200.0, 60.0], egui::Button::new(egui::RichText::new(btn_label).size(18.0)).fill(btn_color)).clicked() {
-                        data.is_active = !data.is_active;
-                        ctx.request_repaint();
-                    }
-
-                    // Power Saver Logic
-                    if data.is_active {
-                        ctx.request_repaint_after(Duration::from_secs(1));
-                    }
+                if ui.button("Clear History").clicked() {
+                    self.state.counter = 0;
+                    self.state.last_action = "Cleared".to_string();
                 }
             });
         });
+
+        // CATATAN KRUSIAL: 
+        // Di sini kita TIDAK memanggil ctx.request_repaint() atau request_repaint_after().
+        // Artinya, loop update akan BERHENTI total jika tidak ada sentuhan layar.
+        // Baterai HP kamu akan sangat aman.
     }
 }
