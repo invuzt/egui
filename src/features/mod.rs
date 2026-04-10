@@ -1,24 +1,12 @@
-use eframe::egui;
-
 pub trait OdfizModule {
     fn name(&self) -> &str;
-    fn ui(&mut self, ui: &mut egui::Ui);
+    fn ui(&mut self, ui: &mut eframe::egui::Ui);
 }
 
-pub mod counter_feature;
-pub mod crud_feature;
+mod odfiz_pos; // Pastikan file odfiz_pos.rs ada
 
-macro_rules! register_modules {
-    ($($mod_name:ident::$struct_name:ident),*) => {
-        pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
-            vec![
-                $((false, Box::new($mod_name::$struct_name::new()))),*
-            ]
-        }
-    };
+pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
+    vec![
+        (false, Box::new(odfiz_pos::OdfizPOS::new())),
+    ]
 }
-
-register_modules!(
-    counter_feature::CounterFeature,
-    crud_feature::CrudFeature
-);
