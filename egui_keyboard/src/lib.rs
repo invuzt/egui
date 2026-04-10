@@ -1,6 +1,5 @@
 use egui::{
-    vec2, Align2, Button, Context, Event, Frame, Id, Modifiers, Order, Rect, Ui, Vec2, WidgetText,
-    Window,
+    Align2, Context, Event, Frame, Id, Modifiers, Order, Ui, Window,
 };
 use std::collections::VecDeque;
 
@@ -36,7 +35,8 @@ impl Keyboard {
     }
 
     pub fn show(&mut self, ctx: &Context) {
-        if ctx.egui_wants_keyboard_input() {
+        // Perbaikan: Pakai wants_keyboard_input() sesuai saran rustc
+        if ctx.wants_keyboard_input() {
             self.needed = 20;
             self.input_widget = ctx.memory(|m| m.focused());
         } else {
@@ -45,17 +45,18 @@ impl Keyboard {
 
         if self.needed > 0 {
             let keys = self.keyboard_layout.get_keys(self.upper);
+            
+            // Perbaikan: Style & Order disesuaikan dengan versi 0.27.2
             Window::new("Keyboard")
-                .frame(Frame::none().fill(ctx.global_style().visuals.extreme_bg_color))
+                .frame(Frame::none().fill(ctx.style().visuals.extreme_bg_color))
                 .anchor(Align2::CENTER_BOTTOM, [0., 0.])
                 .collapsible(false)
                 .resizable(false)
                 .title_bar(false)
-                .order(Order::Foreground)
-                .show(ctx, |ui| {
-                    ui.vertical(|ui| {
+                .show(ctx, |ui: &mut Ui| { // Tambahkan tipe data eksplisit
+                    ui.vertical(|ui: &mut Ui| {
                         for row in keys {
-                            ui.horizontal(|ui| {
+                            ui.horizontal(|ui: &mut Ui| {
                                 for key in row {
                                     match key {
                                         Key::Text(t) => if ui.button(t).clicked() {
