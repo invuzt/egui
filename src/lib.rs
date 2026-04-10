@@ -46,12 +46,12 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 impl eframe::App for OdfizShell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(50.0); // Safety space status bar
+            ui.add_space(50.0);
 
             if self.active_feature.is_none() {
-                // --- HEADER DASHBOARD ---
                 ui.vertical_centered(|ui| {
-                    ui.label(RichText::new("ODFIZ CORE SYSTEM").strong().size(16.0).color(COLOR_ACCENT).letter_spacing(2.0));
+                    // FIX: Menggunakan extra_letter_spacing
+                    ui.label(RichText::new("ODFIZ CORE SYSTEM").strong().size(16.0).color(COLOR_ACCENT).extra_letter_spacing(2.0));
                     ui.add_space(20.0);
                 });
 
@@ -68,7 +68,7 @@ impl eframe::App for OdfizShell {
                                         .stroke(egui::Stroke::new(1.0, COLOR_ACCENT)).show(ui, |ui| {
                                             ui.set_min_width(ui.available_width());
                                             ui.label(RichText::new("MODULE").color(COLOR_TEXT_DIM).size(10.0));
-                                            ui.label(RichText::new(module.name()).strong().size(18.0));
+                                            ui.label(RichText::new(module.name().to_uppercase()).strong().size(18.0));
                                         });
 
                                     ui.add_space(15.0);
@@ -82,20 +82,18 @@ impl eframe::App for OdfizShell {
                     });
                 });
             } else {
-                // --- HEADER HALAMAN MODUL (SERASI) ---
                 ui.horizontal(|ui| {
-                    // Tombol Back minimalis
                     if ui.button(RichText::new("←").size(20.0).color(COLOR_ACCENT)).clicked() {
                         self.active_feature = None;
                     }
                     ui.add_space(10.0);
                     if let Some(i) = self.active_feature {
-                        // Judul Modul di Header disamakan gayanya dengan Dashboard
+                        // FIX: Menggunakan extra_letter_spacing
                         ui.label(RichText::new(self.modules[i].1.name().to_uppercase())
                             .strong()
                             .size(16.0)
                             .color(COLOR_ACCENT)
-                            .letter_spacing(2.0));
+                            .extra_letter_spacing(2.0));
                     }
                 });
                 
