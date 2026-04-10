@@ -2,6 +2,7 @@
 mod features;
 
 use eframe::egui;
+use eframe::egui::{FontId, FontFamily, TextStyle};
 use features::get_all_modules;
 
 struct OdfizShell {
@@ -19,7 +20,23 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     let _ = eframe::run_native(
         "Odfiz Shell",
         options,
-        Box::new(|_cc| {
+        Box::new(|cc| {
+            // --- SETTING UKURAN GLOBAL ---
+            let mut style = (*cc.egui_ctx.style()).clone();
+            
+            // Perbesar semua jenis tulisan
+            style.text_styles.insert(TextStyle::Heading, FontId::new(30.0, FontFamily::Proportional));
+            style.text_styles.insert(TextStyle::Body, FontId::new(22.0, FontFamily::Proportional));
+            style.text_styles.insert(TextStyle::Button, FontId::new(22.0, FontFamily::Proportional));
+            style.text_styles.insert(TextStyle::Monospace, FontId::new(20.0, FontFamily::Monospace));
+            
+            // Perbesar spasi antar tombol dan padding tombol
+            style.spacing.item_spacing = egui::vec2(10.0, 25.0);
+            style.spacing.button_padding = egui::vec2(20.0, 15.0);
+            style.spacing.interact_size = egui::vec2(40.0, 40.0); // Area klik minimal jadi lebih luas
+
+            cc.egui_ctx.set_style(style);
+
             Box::new(OdfizShell { 
                 modules: get_all_modules(),
             })
@@ -29,25 +46,37 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 
 impl eframe::App for OdfizShell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Space buat status bar biar nggak ketutup
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.add_space(40.0);
-            ui.heading("Odfiz App");
-        });
-
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.label("Daftar Modul:");
-                for (enabled, module) in self.modules.iter_mut() {
-                    ui.checkbox(enabled, module.name());
-                    if *enabled {
-                        ui.indent("module", |ui| {
-                            module.ui(ui);
-                        });
+            // Gunakan scroll area agar kalau modul banyak tidak terpotong
+            egui::ScrollArea::vertical()
+                .id_source("main_scroll")
+                .show(ui, |ui| {
+                    ui.add_space(50.0); // Jarak aman status bar atas
+                    
+                    // MEMBUAT SEMUA RATA TENGAH
+                    ui.vertical_centered(|ui| {
+                        ui.heading("ODFIZ APP");
+                        ui.add_space(20.0);
                         ui.separator();
-                    }
-                }
-            });
+                        ui.add_space(20.0);
+
+                        for (enabled, module) in self.modules.iter_mut() {
+                            // Checkbox dibuat besar dan di tengah
+                            ui.checkbox(enabled, module.name());
+                            
+                            if *enabled {
+                                ui.add_space(10.0);
+                                // Isi modul juga dipaksa rata tengah
+                                ui.vertical_centered(|ui| {
+                                    module.ui(ui);
+                                });
+                                ui.add_space(20.0);
+                                ui.separator();
+                                ui.add_space(20.0);
+                            }
+                        }
+                    });
+                });
         });
     }
 }
