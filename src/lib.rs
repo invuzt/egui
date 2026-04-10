@@ -15,6 +15,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     let state = Arc::new(Mutex::new(AppState {
+        status: "Disconnected".to_string(), // Dummy field jika dibutuhkan di masa depan
         is_internet_online: false,
         counter: 0,
         connections: Vec::new(),
@@ -57,7 +58,8 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     );
 }
 
-// --- CUSTOM CABLE WIDGET DENGAN TOMBOL SILANG & WARNA DINAMIS ---
+// FIX 2: Tambahkan derive Debug agar bisa jadi widget
+#[derive(Debug)]
 struct OdfizCable;
 
 impl egui::Widget for OdfizCable {
@@ -65,8 +67,9 @@ impl egui::Widget for OdfizCable {
         let params = CableParams::get(ui);
         let mut bezier = params.bezier;
         
-        // Tentukan warna: Hijau jika connect ke socket, Abu-abu jika lepas
-        let is_connected = params.out_plug.is_connected();
+        // FIX 1: Cara cek koneksi di v0.5.1 adalah lewat plugs_interacted
+        let is_connected = params.plugs_interacted.1.is_connected();
+        
         let color = if is_connected {
             egui::Color32::from_rgb(0, 255, 150) // Hijau Neon
         } else {
@@ -76,16 +79,15 @@ impl egui::Widget for OdfizCable {
         bezier.stroke = egui::Stroke::new(4.0, color);
         ui.painter().add(bezier);
 
-        // Jika kabel disentuh/hover, munculkan tombol silang di tengah kabel
         let mut response = ui.add(params.cable_control);
         
+        // Munculkan tombol silang jika disentuh
         if response.hovered() || response.has_focus() {
             let mid_point = bezier.sample(0.5);
-            let rect = egui::Rect::from_center_size(mid_point, egui::vec2(30.0, 30.0));
+            let rect = egui::Rect::from_center_size(mid_point, egui::vec2(40.0, 40.0));
             
-            // Tombol silang manual
-            if ui.put(rect, egui::Button::new(egui::RichText::new("❌").size(14.0)).fill(egui::Color32::RED)).clicked() {
-                response.mark_changed(); // Trigger disconnect via click
+            if ui.put(rect, egui::Button::new(egui::RichText::new("❌").size(18.0)).fill(egui::Color32::RED)).clicked() {
+                response.mark_changed(); 
             }
         }
         
@@ -104,8 +106,8 @@ impl eframe::App for OdfizApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(10.0);
             ui.vertical_centered(|ui| {
-                ui.heading("ODFIZ NETWORK CORE");
-                ui.label("Pencet kabel untuk muncul tombol ❌");
+                ui.heading(egui::RichText::new("ODFIZ NETWORK CORE").strong());
+                ui.label("Sentuh kabel untuk memutuskan");
                 ui.separator();
             });
 
@@ -118,6 +120,7 @@ impl eframe::App for OdfizApp {
 
                 ui.add_space(40.0);
 
+                // Handling kabel baru
                 if data.connections.is_empty() {
                     let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()).widget(OdfizCable));
                     if let Some(p_id) = res.out_plug().connected_to() {
@@ -126,12 +129,11 @@ impl eframe::App for OdfizApp {
                     }
                 }
 
+                // Handling kabel aktif
                 let mut should_disconnect = false;
                 for (id, a, b) in data.connections.iter() {
                     let mut res = ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)).widget(OdfizCable));
-                    
-                    // Jika tombol silang di CustomCable diklik (mark_changed) atau kabel ditarik
-                    if res.changed() || res.clicked() || res.out_plug().disconnected() {
+                    if res.changed() || res.out_plug().disconnected() {
                         should_disconnect = true;
                     }
                 }
@@ -145,10 +147,10 @@ impl eframe::App for OdfizApp {
                 ui.group(|ui| {
                     ui.set_width(ui.available_width());
                     if data.is_internet_online {
-                        ui.colored_label(egui::Color32::from_rgb(0, 255, 150), "📡 SIGNAL: STABLE");
+                        ui.colored_label(egui::Color32::from_rgb(0, 255, 150), "📡 SIGNAL: ACTIVE");
                         ui.label(format!("Traffic: {} packets", data.counter));
                     } else {
-                        ui.colored_label(egui::Color32::from_rgb(255, 80, 80), "🚫 SIGNAL: LOST");
+                        ui.colored_label(egui::Color32::from_rgb(255, 80, 80), "🚫 SIGNAL: OFFLINE");
                     }
                 });
             }
