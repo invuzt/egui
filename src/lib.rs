@@ -15,7 +15,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     let state = Arc::new(Mutex::new(AppState {
-        status: "Disconnected".to_string(), // Dummy field jika dibutuhkan di masa depan
         is_internet_online: false,
         counter: 0,
         connections: Vec::new(),
@@ -58,7 +57,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     );
 }
 
-// FIX 2: Tambahkan derive Debug agar bisa jadi widget
 #[derive(Debug)]
 struct OdfizCable;
 
@@ -67,8 +65,8 @@ impl egui::Widget for OdfizCable {
         let params = CableParams::get(ui);
         let mut bezier = params.bezier;
         
-        // FIX 1: Cara cek koneksi di v0.5.1 adalah lewat plugs_interacted
-        let is_connected = params.plugs_interacted.1.is_connected();
+        // FIX E0610: Cek koneksi via out_plug dari params
+        let is_connected = params.out_plug.is_connected();
         
         let color = if is_connected {
             egui::Color32::from_rgb(0, 255, 150) // Hijau Neon
@@ -81,11 +79,11 @@ impl egui::Widget for OdfizCable {
 
         let mut response = ui.add(params.cable_control);
         
-        // Munculkan tombol silang jika disentuh
         if response.hovered() || response.has_focus() {
             let mid_point = bezier.sample(0.5);
             let rect = egui::Rect::from_center_size(mid_point, egui::vec2(40.0, 40.0));
             
+            // Tombol silang untuk putus koneksi
             if ui.put(rect, egui::Button::new(egui::RichText::new("❌").size(18.0)).fill(egui::Color32::RED)).clicked() {
                 response.mark_changed(); 
             }
@@ -107,7 +105,6 @@ impl eframe::App for OdfizApp {
             ui.add_space(10.0);
             ui.vertical_centered(|ui| {
                 ui.heading(egui::RichText::new("ODFIZ NETWORK CORE").strong());
-                ui.label("Sentuh kabel untuk memutuskan");
                 ui.separator();
             });
 
@@ -120,7 +117,6 @@ impl eframe::App for OdfizApp {
 
                 ui.add_space(40.0);
 
-                // Handling kabel baru
                 if data.connections.is_empty() {
                     let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()).widget(OdfizCable));
                     if let Some(p_id) = res.out_plug().connected_to() {
@@ -129,10 +125,10 @@ impl eframe::App for OdfizApp {
                     }
                 }
 
-                // Handling kabel aktif
                 let mut should_disconnect = false;
                 for (id, a, b) in data.connections.iter() {
                     let mut res = ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)).widget(OdfizCable));
+                    // Putus jika tombol X diklik (changed) atau kabel ditarik paksa
                     if res.changed() || res.out_plug().disconnected() {
                         should_disconnect = true;
                     }
@@ -151,6 +147,7 @@ impl eframe::App for OdfizApp {
                         ui.label(format!("Traffic: {} packets", data.counter));
                     } else {
                         ui.colored_label(egui::Color32::from_rgb(255, 80, 80), "🚫 SIGNAL: OFFLINE");
+                        ui.label("Connect SOURCE to a SOCKET.");
                     }
                 });
             }
