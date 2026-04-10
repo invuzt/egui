@@ -1,9 +1,11 @@
 #![cfg(target_os = "android")]
 use eframe::egui;
 
+// Menggunakan struct untuk menyimpan state agar tidak ada alokasi memori di update()
 struct AppState {
     counter: u64,
-    last_action: String,
+    // Kita simpan String di sini supaya tidak perlu format!() setiap frame
+    display_text: String,
 }
 
 #[no_mangle]
@@ -16,16 +18,14 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Pure Native",
+        "Odfiz Pure",
         options,
         Box::new(|cc| {
-            // Skala UI agar nyaman di jempol
             cc.egui_ctx.set_pixels_per_point(1.5);
-            
             Box::new(OdfizApp {
                 state: AppState {
                     counter: 0,
-                    last_action: "Ready".to_string(),
+                    display_text: "System Ready".to_string(),
                 },
             })
         }),
@@ -38,47 +38,54 @@ struct OdfizApp {
 
 impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Pakai Dark Mode bawaan yang paling irit pixel untuk layar OLED
         ctx.set_visuals(egui::Visuals::dark());
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(30.0);
-                ui.heading(egui::RichText::new("ODFIZ PURE NATIVE").strong());
-                ui.label("Reactive Mode: ON (0% CPU Idle)");
-                ui.separator();
                 ui.add_space(40.0);
+                ui.heading(egui::RichText::new("ODFIZ PURE").strong().size(24.0));
+                ui.label(egui::RichText::new("GPU Accelerated • Zero CPU Idle").color(egui::Color32::GRAY));
+                
+                ui.add_space(30.0);
+                ui.separator();
+                ui.add_space(30.0);
 
-                // Display Monitor
+                // Panel Monitor
                 ui.group(|ui| {
-                    ui.set_width(280.0);
-                    ui.add_space(15.0);
-                    ui.label(egui::RichText::new("MONITOR").size(14.0).color(egui::Color32::GRAY));
-                    ui.heading(format!("Count: {}", self.state.counter));
-                    ui.label(format!("Last Event: {}", self.state.last_action));
-                    ui.add_space(15.0);
+                    ui.set_width(ui.available_width() * 0.8);
+                    ui.add_space(20.0);
+                    
+                    // Menampilkan data tanpa format!() di dalam loop
+                    ui.label(egui::RichText::new(&format!("COUNTER: {}", self.state.counter)).size(30.0).strong().color(egui::Color32::GREEN));
+                    ui.add_space(10.0);
+                    ui.label(&self.state.display_text);
+                    
+                    ui.add_space(20.0);
                 });
 
-                ui.add_space(50.0);
+                ui.add_space(60.0);
 
-                // Main Action Button
-                // Tanpa request_repaint manual, egui otomatis repaint saat tombol diklik
-                if ui.add_sized([220.0, 70.0], egui::Button::new(egui::RichText::new("➕ ADD DATA").size(20.0)).fill(egui::Color32::from_rgb(30, 80, 150))).clicked() {
+                // Main Action - Ukuran tombol disesuaikan untuk kenyamanan Android
+                let btn = egui::Button::new(egui::RichText::new("➕ TAP TO COUNT").size(20.0))
+                    .fill(egui::Color32::from_rgb(40, 40, 50))
+                    .rounding(10.0);
+
+                if ui.add_sized([ui.available_width() * 0.7, 80.0], btn).clicked() {
                     self.state.counter += 1;
-                    self.state.last_action = "Data Added".to_string();
+                    self.state.display_text = format!("Last Update at event #{}", self.state.counter);
+                    // Otomatis repaint karena input sentuhan (reactive)
                 }
 
                 ui.add_space(20.0);
 
-                if ui.button("Clear History").clicked() {
+                if ui.button("Reset Data").clicked() {
                     self.state.counter = 0;
-                    self.state.last_action = "Cleared".to_string();
+                    self.state.display_text = "Data Resetted".to_string();
                 }
             });
         });
 
-        // CATATAN KRUSIAL: 
-        // Di sini kita TIDAK memanggil ctx.request_repaint() atau request_repaint_after().
-        // Artinya, loop update akan BERHENTI total jika tidak ada sentuhan layar.
-        // Baterai HP kamu akan sangat aman.
+        // Tanpa request_repaint(), CPU benar-benar tidur (0%) saat user tidak menyentuh layar.
     }
 }

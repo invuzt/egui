@@ -7,9 +7,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-eframe = { version = "0.27", default-features = false, features = ["android-native-activity", "wgpu", "glow"] }
+eframe = { version = "0.27.2", features = ["android-native-activity"] }
 winit = { version = "0.29", features = ["android-native-activity"] }
-egui = "0.27"
-egui_cable = "0.5"
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "macros"] }
-axum = "0.7"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
