@@ -65,8 +65,8 @@ impl egui::Widget for OdfizCable {
         let params = CableParams::get(ui);
         let mut bezier = params.bezier;
         
-        // FIX E0610: Cek koneksi via out_plug dari params
-        let is_connected = params.out_plug.is_connected();
+        // FIX: plugs_interacted.1 adalah boolean untuk status Out Plug (koneksi)
+        let is_connected = params.plugs_interacted.1;
         
         let color = if is_connected {
             egui::Color32::from_rgb(0, 255, 150) // Hijau Neon
@@ -83,7 +83,6 @@ impl egui::Widget for OdfizCable {
             let mid_point = bezier.sample(0.5);
             let rect = egui::Rect::from_center_size(mid_point, egui::vec2(40.0, 40.0));
             
-            // Tombol silang untuk putus koneksi
             if ui.put(rect, egui::Button::new(egui::RichText::new("❌").size(18.0)).fill(egui::Color32::RED)).clicked() {
                 response.mark_changed(); 
             }
@@ -128,7 +127,6 @@ impl eframe::App for OdfizApp {
                 let mut should_disconnect = false;
                 for (id, a, b) in data.connections.iter() {
                     let mut res = ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)).widget(OdfizCable));
-                    // Putus jika tombol X diklik (changed) atau kabel ditarik paksa
                     if res.changed() || res.out_plug().disconnected() {
                         should_disconnect = true;
                     }
@@ -147,7 +145,6 @@ impl eframe::App for OdfizApp {
                         ui.label(format!("Traffic: {} packets", data.counter));
                     } else {
                         ui.colored_label(egui::Color32::from_rgb(255, 80, 80), "🚫 SIGNAL: OFFLINE");
-                        ui.label("Connect SOURCE to a SOCKET.");
                     }
                 });
             }
