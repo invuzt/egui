@@ -12,33 +12,40 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+          # OPTIMASI 1: Java juga butuh cache agar gradlew cepat
+          cache: 'gradle'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
-      # --- TAMBAHKAN CACHE DI SINI ---
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: "android-build"
 
       - name: Install cargo-ndk
-        run: cargo install cargo-ndk
+        # OPTIMASI 2: Jangan install ulang tiap kali run jika sudah ada di cache
+        run: |
+          if ! command -v cargo-ndk &> /dev/null; then
+            cargo install cargo-ndk
+          fi
 
-      - name: Build Rust Lib
+      - name: Build Rust Lib (Release)
         run: |
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release
 
-      - name: Build APK with Gradle
+      - name: Build APK with Gradle (Release)
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # OPTIMASI 3: Ganti assembleDebug ke assembleRelease
+          ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: odfiz-app
-          path: app/build/outputs/apk/debug/*.apk
+          name: odfiz-pure-release
+          # Jalur output untuk release build
+          path: app/build/outputs/apk/release/*.apk
