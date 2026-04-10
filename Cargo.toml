@@ -7,10 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Naikkan ke 0.30 agar cocok dengan keyboard
-eframe = { version = "0.30", features = ["android-native-activity"] }
-winit = { version = "0.30", features = ["android-native-activity"] }
-egui_virtual_keyboard = "0.1.3"
+eframe = { version = "0.27.2", features = ["android-native-activity"] }
+winit = { version = "0.29", features = ["android-native-activity"] }
 
 [profile.release]
 opt-level = "z"
