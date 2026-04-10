@@ -12,7 +12,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-          # OPTIMASI 1: Java juga butuh cache agar gradlew cepat
           cache: 'gradle'
 
       - name: Setup Rust
@@ -26,7 +25,6 @@ jobs:
           shared-key: "android-build"
 
       - name: Install cargo-ndk
-        # OPTIMASI 2: Jangan install ulang tiap kali run jika sudah ada di cache
         run: |
           if ! command -v cargo-ndk &> /dev/null; then
             cargo install cargo-ndk
@@ -40,12 +38,21 @@ jobs:
       - name: Build APK with Gradle (Release)
         run: |
           chmod +x gradlew
-          # OPTIMASI 3: Ganti assembleDebug ke assembleRelease
           ./gradlew assembleRelease
 
-      - name: Upload APK
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: odfiz-pure-release
-          # Jalur output untuk release build
-          path: app/build/outputs/apk/release/*.apk
+          name: odfiz-final-signed
+          # Mengambil output file yang sudah ditandatangani
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
