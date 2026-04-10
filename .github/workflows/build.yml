@@ -40,6 +40,13 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
+      # --- FIX: Tambahkan ini agar sign-android-release menemukan build-tools ---
+      - name: Set Build Tools Path
+        run: |
+          BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools/ | tail -n 1)
+          echo "ANDROID_BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION" >> $GITHUB_PATH
+
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_app
@@ -49,10 +56,12 @@ jobs:
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+        # Tambahkan env ini untuk memaksa versi build tools yang ditemukan
+        env:
+          BUILD_TOOLS_VERSION: ${{ env.ANDROID_BUILD_TOOLS_VERSION }}
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
           name: odfiz-final-signed
-          # Mengambil output file yang sudah ditandatangani
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
