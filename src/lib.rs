@@ -31,9 +31,9 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
                         let mut data = s.lock().await;
                         if data.is_internet_online {
                             data.counter += 1;
-                            "Signal Received"
+                            "Signal OK"
                         } else {
-                            "ERROR: NO CONNECTION"
+                            "NO INTERNET"
                         }
                     }
                 }));
@@ -57,41 +57,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     );
 }
 
-#[derive(Debug)]
-struct OdfizCable;
-
-impl egui::Widget for OdfizCable {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let params = CableParams::get(ui);
-        let mut bezier = params.bezier;
-        
-        // FIX: plugs_interacted.1 adalah boolean untuk status Out Plug (koneksi)
-        let is_connected = params.plugs_interacted.1;
-        
-        let color = if is_connected {
-            egui::Color32::from_rgb(0, 255, 150) // Hijau Neon
-        } else {
-            egui::Color32::from_rgb(100, 100, 100) // Abu-abu
-        };
-
-        bezier.stroke = egui::Stroke::new(4.0, color);
-        ui.painter().add(bezier);
-
-        let mut response = ui.add(params.cable_control);
-        
-        if response.hovered() || response.has_focus() {
-            let mid_point = bezier.sample(0.5);
-            let rect = egui::Rect::from_center_size(mid_point, egui::vec2(40.0, 40.0));
-            
-            if ui.put(rect, egui::Button::new(egui::RichText::new("❌").size(18.0)).fill(egui::Color32::RED)).clicked() {
-                response.mark_changed(); 
-            }
-        }
-        
-        response
-    }
-}
-
 struct OdfizApp {
     state: Arc<Mutex<AppState>>,
 }
@@ -108,43 +73,49 @@ impl eframe::App for OdfizApp {
             });
 
             if let Ok(mut data) = self.state.try_lock() {
+                // Layout Port
                 ui.columns(3, |cols| {
                     cols[0].vertical_centered(|ui| { ui.label("SOURCE"); ui.add(Port::new(10usize)); });
-                    cols[1].vertical_centered(|ui| { ui.label("SERVER"); ui.add(Port::new(20usize)); });
-                    cols[2].vertical_centered(|ui| { ui.label("MONITOR"); ui.add(Port::new(30usize)); });
+                    cols[1].vertical_centered(|ui| { ui.label("SOCKET A"); ui.add(Port::new(20usize)); });
+                    cols[2].vertical_centered(|ui| { ui.label("SOCKET B"); ui.add(Port::new(30usize)); });
                 });
 
-                ui.add_space(40.0);
+                ui.add_space(30.0);
 
+                // Manajemen Kabel (Tanpa Custom Widget yang error)
                 if data.connections.is_empty() {
-                    let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()).widget(OdfizCable));
+                    let mut res = ui.add(Cable::new(0, Plug::to(10usize), Plug::unplugged()));
                     if let Some(p_id) = res.out_plug().connected_to() {
                         let target = *p_id.downcast_ref::<usize>().unwrap();
                         data.connections.push((0, 10, target));
                     }
                 }
 
-                let mut should_disconnect = false;
                 for (id, a, b) in data.connections.iter() {
-                    let mut res = ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)).widget(OdfizCable));
-                    if res.changed() || res.out_plug().disconnected() {
-                        should_disconnect = true;
+                    // Kabel standar saja biar aman
+                    ui.add(Cable::new(*id, Plug::to(*a), Plug::to(*b)));
+                }
+
+                ui.add_space(20.0);
+
+                // TOMBOL RESET / PUTUS KABEL
+                if !data.connections.is_empty() {
+                    if ui.add_sized([ui.available_width(), 40.0], egui::Button::new("✂ PUTUSKAN KONEKSI").fill(egui::Color32::from_rgb(150, 0, 0))).clicked() {
+                        data.connections.clear();
                     }
                 }
 
-                if should_disconnect {
-                    data.connections.clear();
-                }
-
+                // Logika Internet Online
                 data.is_internet_online = data.connections.iter().any(|&(_, _, b)| b == 20 || b == 30);
 
                 ui.group(|ui| {
                     ui.set_width(ui.available_width());
                     if data.is_internet_online {
-                        ui.colored_label(egui::Color32::from_rgb(0, 255, 150), "📡 SIGNAL: ACTIVE");
-                        ui.label(format!("Traffic: {} packets", data.counter));
+                        ui.colored_label(egui::Color32::GREEN, "📡 STATUS: ONLINE");
+                        ui.label(format!("Traffic: {} pkts", data.counter));
                     } else {
-                        ui.colored_label(egui::Color32::from_rgb(255, 80, 80), "🚫 SIGNAL: OFFLINE");
+                        ui.colored_label(egui::Color32::RED, "🚫 STATUS: OFFLINE");
+                        ui.label("Sambungkan kabel dari SOURCE ke SOCKET.");
                     }
                 });
             }
