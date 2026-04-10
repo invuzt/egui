@@ -7,12 +7,20 @@ pub trait OdfizModule {
 
 pub mod counter_feature;
 pub mod crud_feature;
-// Nanti kalau ada fitur baru, cuma tambah 'pub mod' di atas sini
+// Tambah mod baru di sini kalau ada file baru
 
-pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
-    vec![
-        (false, Box::new(counter_feature::CounterFeature::new())),
-        (false, Box::new(crud_feature::CrudFeature::new())),
-        // (false, Box::new(fitur_baru::Baru::new())), <--- Tambah di sini aja
-    ]
+macro_rules! register_modules {
+    ($($mod_name:ident::$struct_name:ident),*) => {
+        pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
+            vec![
+                $((false, Box::new($mod_name::$struct_name::new()))),*
+            ]
+        }
+    };
 }
+
+// CARA PAKAINYA: Cukup sebutkan nama_file::NamaStruct
+register_modules!(
+    counter_feature::CounterFeature,
+    crud_feature::CrudFeature
+);
