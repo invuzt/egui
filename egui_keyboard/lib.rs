@@ -5,15 +5,15 @@ use egui::{
 use std::collections::VecDeque;
 
 pub mod layouts {
+    use super::Key;
     pub struct KeyboardLayout;
     impl KeyboardLayout {
         pub fn get_keys(&self, upper: bool) -> Vec<Vec<Key>> {
-            let row = if upper {
-                vec![Key::Text("Q"), Key::Text("W"), Key::Text("E"), Key::Text("R"), Key::Text("T"), Key::Text("Y"), Key::Text("U"), Key::Text("I"), Key::Text("O"), Key::Text("P")]
+            if upper {
+                vec![vec![Key::Text("Q"), Key::Text("W"), Key::Text("E"), Key::Text("R"), Key::Text("T")], vec![Key::Upper, Key::Backspace]]
             } else {
-                vec![Key::Text("q"), Key::Text("w"), Key::Text("e"), Key::Text("r"), Key::Text("t"), Key::y("y"), Key::Text("u"), Key::Text("i"), Key::Text("o"), Key::Text("p")]
-            };
-            vec![row, vec![Key::Upper, Key::Backspace]]
+                vec![vec![Key::Text("q"), Key::Text("w"), Key::Text("e"), Key::Text("r"), Key::Text("t")], vec![Key::Upper, Key::Backspace]]
+            }
         }
     }
     impl Default for KeyboardLayout { fn default() -> Self { Self } }
@@ -28,11 +28,6 @@ pub struct Keyboard {
     upper: bool,
     keyboard_layout: crate::layouts::KeyboardLayout,
     needed: u32,
-    last_rect: Option<Rect>,
-}
-
-fn heading_button(text: &str) -> Button<'static> {
-    Button::new(WidgetText::from(text).heading()).frame(false).min_size(Vec2::new(10., 50.))
 }
 
 impl Keyboard {
@@ -56,28 +51,31 @@ impl Keyboard {
                 .collapsible(false)
                 .resizable(false)
                 .title_bar(false)
+                .order(Order::Foreground)
                 .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
                         for row in keys {
-                            for key in row {
-                                match key {
-                                    Key::Text(t) => if ui.add(heading_button(t)).clicked() {
-                                        self.events.push_back(Event::Text(t.to_string()));
-                                    },
-                                    Key::Backspace => if ui.add(heading_button("⏴")).clicked() {
-                                        self.events.push_back(Event::Key {
-                                            key: egui::Key::Backspace,
-                                            pressed: true,
-                                            repeat: false,
-                                            modifiers: Modifiers::NONE,
-                                            physical_key: None,
-                                        });
-                                    },
-                                    Key::Upper => if ui.add(heading_button("⏶")).clicked() {
-                                        self.upper = !self.upper;
-                                    },
+                            ui.horizontal(|ui| {
+                                for key in row {
+                                    match key {
+                                        Key::Text(t) => if ui.button(t).clicked() {
+                                            self.events.push_back(Event::Text(t.to_string()));
+                                        },
+                                        Key::Backspace => if ui.button("⏴").clicked() {
+                                            self.events.push_back(Event::Key {
+                                                key: egui::Key::Backspace,
+                                                pressed: true,
+                                                repeat: false,
+                                                modifiers: Modifiers::NONE,
+                                                physical_key: None,
+                                            });
+                                        },
+                                        Key::Upper => if ui.button("⏶").clicked() {
+                                            self.upper = !self.upper;
+                                        },
+                                    }
                                 }
-                            }
+                            });
                         }
                     });
                 });
