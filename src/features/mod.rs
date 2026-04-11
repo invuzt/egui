@@ -3,12 +3,12 @@ pub trait OdfizModule {
     fn ui(&mut self, ui: &mut eframe::egui::Ui);
 }
 
-mod odfiz_pos;
-mod calculator;
+mod server;
+mod motion; // <-- Tambah ini
 
 pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
     vec![
-        (false, Box::new(odfiz_pos::OdfizPOS::new())),
-        (false, Box::new(calculator::OdfizCalc::new())), // Modul baru terdaftar
+        (false, Box::new(server::LiteServer::new())),
+        (false, Box::new(motion::MotionGraphic::new())), // <-- Daftar di sini
     ]
 }
