@@ -20,10 +20,11 @@ impl EventHandler for Stage {
     fn draw(&mut self) {
         let mut mq_ctx = window::new_rendering_backend();
         
-        // Clear screen iOS Gray
+        // Warna background iOS Light
         mq_ctx.clear(Some((242.0/255.0, 242.0/255.0, 247.0/255.0, 1.0)), None, None);
         
-        self.egui_mq.run(&mut *mq_ctx, |egui_ctx| {
+        // FIX E0593: Tambahkan argumen mq_ctx di dalam closure
+        self.egui_mq.run(&mut *mq_ctx, |_mq_ctx, egui_ctx| {
             theme::apply_ios_style(egui_ctx);
             
             egui::CentralPanel::default().show(egui_ctx, |ui| {
@@ -32,12 +33,14 @@ impl EventHandler for Stage {
                     ui.label(egui::RichText::new("ODFIZ MINIQUAD").size(30.0).strong());
                     ui.add_space(20.0);
                     
-                    ui.label("Status: Running Pure Rust");
-                    ui.label("Mesin: Miniquad 0.4");
+                    ui.group(|ui| {
+                        ui.label("Status: Running on Miniquad 0.4");
+                        ui.label("Architecture: Zero-Fat NDK");
+                    });
 
                     ui.add_space(30.0);
-                    if ui.button(" GAS KAN ").clicked() {
-                        println!("Tombol ditekan!");
+                    if ui.button(" CEK BUILD ").clicked() {
+                        println!("Build Sukses!");
                     }
                 });
             });
