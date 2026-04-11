@@ -1,13 +1,11 @@
 #![cfg(target_os = "android")]
-mod features;
 mod theme;
 
 use eframe::egui;
 
-struct OdfizShell {
-    mm: features::ModuleManager,
+struct OdfizHello {
     user_name: String,
-    greeting: String,
+    rust_response: String,
 }
 
 #[no_mangle]
@@ -19,61 +17,45 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Clean",
+        "Odfiz Hello",
         options,
         Box::new(|cc| {
-            theme::apply_clean_style(&cc.egui_ctx);
-            Box::new(OdfizShell { 
-                mm: features::ModuleManager::new(),
+            theme::apply_basic_style(&cc.egui_ctx);
+            Box::new(OdfizHello { 
                 user_name: String::new(),
-                greeting: String::new(),
+                rust_response: String::new(),
             })
         }),
     );
 }
 
-impl eframe::App for OdfizShell {
+impl eframe::App for OdfizHello {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(20.0);
-            
-            ui.heading("Odfiz Core - Clean Mode");
-            ui.separator();
-            ui.add_space(10.0);
+            ui.vertical_centered(|ui| {
+                ui.add_space(50.0);
+                ui.heading("RUST NDK - HELLO WORLD");
+                ui.add_space(20.0);
 
-            // --- FITUR INPUT NAMA ---
-            ui.group(|ui| {
-                ui.label("Masukkan Nama Anda:");
-                let name_input = ui.text_edit_singleline(&mut self.user_name);
+                ui.label("Masukkan nama Anda:");
+                let input = ui.text_edit_singleline(&mut self.user_name);
                 
-                if ui.button("Kirim ke Rust").clicked() || (name_input.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
+                ui.add_space(10.0);
+
+                if ui.button("KIRIM KE RUST").clicked() || (input.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
                     if self.user_name.trim().is_empty() {
-                        self.greeting = "Rust bilang: Namanya jangan kosong dong, Mas!".to_string();
+                        self.rust_response = "Rust: Tolong isi namanya dulu ya!".to_string();
                     } else {
-                        // Di sini Rust memproses input
-                        self.greeting = format!("Halo {}, salam dari Rust NDK!", self.user_name);
+                        self.rust_response = format!("Rust bilang: Halo {}, selamat datang di dunia Rust NDK!", self.user_name);
                     }
                 }
 
-                if !self.greeting.is_empty() {
+                if !self.rust_response.is_empty() {
+                    ui.add_space(30.0);
+                    ui.separator();
                     ui.add_space(10.0);
-                    ui.label(egui::RichText::new(&self.greeting).color(egui::Color32::LIGHT_BLUE).strong());
+                    ui.label(egui::RichText::new(&self.rust_response).size(18.0).strong());
                 }
-            });
-
-            ui.add_space(20.0);
-
-            // --- MODUL LAIN (Layout Bersih) ---
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.collapsing("🌐 Lite Server Control", |ui| {
-                    self.mm.server.ui(ui);
-                });
-
-                ui.add_space(10.0);
-
-                ui.collapsing("💰 Kasir System", |ui| {
-                    self.mm.kasir.ui(ui);
-                });
             });
         });
     }
