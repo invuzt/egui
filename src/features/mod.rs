@@ -1,8 +1,15 @@
-pub trait OdfizModule {
-    fn name(&self) -> &str;
-    fn ui(&mut self, ui: &mut eframe::egui::Ui);
+pub mod server;
+
+pub struct ModuleManager {
+    pub server: server::LiteServer,
+    pub server_open: bool,
 }
 
-pub fn get_all_modules() -> Vec<(bool, Box<dyn OdfizModule>)> {
-    vec![] // Kosong
+impl ModuleManager {
+    pub fn new() -> Self {
+        Self {
+            server: server::LiteServer::new(),
+            server_open: false,
+        }
+    }
 }
