@@ -7,10 +7,13 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-slint = { version = "1.9", features = ["compat-1-2", "renderer-software"] }
+# Kita kunci versinya ke 1.9 agar stabil
+slint = { version = "1.9.1", features = ["compat-1-2", "renderer-software"] }
+# Tambahkan backend ini secara manual sesuai saran error
+i-slint-backend-android-activity = "1.9.1"
 
 [build-dependencies]
-slint-build = "1.9"
+slint-build = "1.9.1"
 
 [profile.release]
 opt-level = "z"
