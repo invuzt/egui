@@ -8,22 +8,22 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // Gunakan nama yang sesuai dengan kompilasi Slint
     ui.on_refresh_pulse({
         let ui_handle = ui_handle.clone();
         move || {
-            let ui = ui_handle.unwrap();
-            let mut sys = System::new_all();
-            sys.refresh_memory();
-            
-            let used_ram = sys.used_memory() / 1024 / 1024;
-            ui.set_pulse_info(format!("RAM: {} MB", used_ram).into());
+            if let Some(ui) = ui_handle.upgrade() {
+                let mut sys = System::new_all();
+                sys.refresh_memory();
+                let used_ram = sys.used_memory() / 1024 / 1024;
+                ui.set_pulse_info(format!("RAM: {} MB", used_ram).into());
+            }
         }
     });
 
     ui.on_secure_now(move || {
-        let ui = ui_handle.unwrap();
-        ui.set_status_text("Data Encrypted with ChaCha20-Odfiz".into());
+        if let Some(ui) = ui_handle.upgrade() {
+            ui.set_status_text("Odfiz Secure: Data Encrypted & Compressed".into());
+        }
     });
 
     ui.run().unwrap();

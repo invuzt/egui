@@ -6,7 +6,6 @@ export component AppWindow inherits Window {
     width: 400px;
     height: 600px;
 
-    // Pastikan nama callback & property ini SAMA PERSIS dengan di Rust
     callback secure-now();
     callback refresh-pulse();
     in-out property <string> status-text: "Odfiz System Ready";
@@ -17,16 +16,15 @@ export component AppWindow inherits Window {
         spacing: 20px;
         alignment: start;
 
-        // Logo dari ic_launcher (Kita ambil dari assets/res)
-        // Slint bisa baca file langsung selama pathnya benar saat build
+        // Ikon Launcher sebagai Logo Utama
         Image {
             source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             horizontal-alignment: center;
         }
 
-        // Monitoring Area (Modern Box)
+        // Monitoring Box
         Rectangle {
             height: 80px;
             background: #0f3460;
@@ -34,33 +32,36 @@ export component AppWindow inherits Window {
             Text {
                 text: root.pulse-info;
                 color: #00d2ff;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: 700;
             }
         }
 
+        // Status Area (Padding diperbaiki dengan membungkus Text dalam VerticalBox)
         Rectangle {
             background: #16213e;
             border-radius: 8px;
-            padding: 10px;
-            Text {
-                text: root.status-text;
-                color: #eeeeee;
-                font-size: 14px;
-                wrap: word;
-                horizontal-alignment: center;
+            VerticalBox {
+                padding: 12px;
+                Text {
+                    text: root.status-text;
+                    color: #eeeeee;
+                    font-size: 14px;
+                    wrap: word-wrap; // Fix: Gunakan word-wrap
+                    horizontal-alignment: center;
+                }
             }
         }
 
         Button {
             text: "SECURE DATA";
             primary: true;
-            height: 50px;
+            height: 55px;
             clicked => { root.secure-now() }
         }
 
         Button {
-            text: "CHECK SYSTEM";
+            text: "REFRESH SYSTEM";
             height: 50px;
             clicked => { root.refresh-pulse() }
         }
