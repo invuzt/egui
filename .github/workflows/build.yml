@@ -38,8 +38,15 @@ jobs:
           # Install platform secara paksa
           sdkmanager "platforms;android-33"
           
-          # Paksa export path SDK
+          # Set variabel untuk shell ini
           export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export ANDROID_PLATFORM=android-33
+          # Path absolut ke android.jar (ini yang dicari Slint)
+          export ANDROID_JAR=$ANDROID_HOME/platforms/android-33/android.jar
+          
+          # Daftarkan ke environment GitHub agar Cargo NDK bisa baca
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_JAR=$ANDROID_JAR" >> $GITHUB_ENV
           
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release
