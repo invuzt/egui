@@ -2,12 +2,13 @@
 mod theme;
 
 use eframe::egui;
-use sysinfo::System;
+use sysinfo::{System, Disks, Components, Networks};
 
 struct OdfizZero {
     sys: System,
-    mem_info: String,
-    cpu_info: String,
+    disks: Disks,
+    components: Components,
+    networks: Networks,
     show_sys_info: bool,
 }
 
@@ -20,14 +21,15 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Zero",
+        "Odfiz Deep Top",
         options,
         Box::new(|cc| {
             theme::apply_ios_style(&cc.egui_ctx);
             Box::new(OdfizZero { 
                 sys: System::new_all(),
-                mem_info: "Belum ada data".to_string(),
-                cpu_info: "Belum ada data".to_string(),
+                disks: Disks::new_with_refreshed_list(),
+                components: Components::new_with_refreshed_list(),
+                networks: Networks::new_with_refreshed_list(),
                 show_sys_info: false,
             })
         }),
@@ -37,69 +39,91 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 impl eframe::App for OdfizZero {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(60.0); // Jarak dari notch/status bar
-
-            ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new("Dashboard").size(32.0).strong());
-                ui.add_space(30.0);
-
-                // Tombol Utama iOS Style
-                let btn_text = if self.show_sys_info { "Tutup System Info" } else { "Buka System Info" };
-                if ui.add_sized([ui.available_width() * 0.8, 50.0], egui::Button::new(btn_text)).clicked() {
-                    self.show_sys_info = !self.show_sys_info;
-                }
-
-                if self.show_sys_info {
+            ui.add_space(50.0);
+            
+            egui::ScrollArea::vertical()
+                .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+                .show(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.label(egui::RichText::new("Odfiz System Deep").size(28.0).strong());
                     ui.add_space(20.0);
-                    
-                    // Card Container
-                    egui::Frame::none()
-                        .fill(egui::Color32::WHITE)
-                        .rounding(15.0)
-                        .inner_margin(20.0)
-                        .show(ui, |ui| {
-                            ui.set_width(ui.available_width() * 0.85);
-                            
-                            if ui.button("🔄 Refresh Data").clicked() {
-                                self.sys.refresh_all();
-                                
-                                let total_mem = self.sys.total_memory() / 1024 / 1024;
-                                let used_mem = self.sys.used_memory() / 1024 / 1024;
-                                self.mem_info = format!("{} MB / {} MB", used_mem, total_mem);
-                                
-                                if let Some(cpu) = self.sys.cpus().first() {
-                                    self.cpu_info = format!("{:.1}%", cpu.cpu_usage());
-                                }
-                            }
 
-                            ui.add_space(10.0);
-                            ui.separator();
-                            ui.add_space(10.0);
+                    if ui.add_sized([ui.available_width() * 0.9, 50.0], egui::Button::new("🔍 REFRESH ALL DATA")).clicked() {
+                        self.sys.refresh_all();
+                        self.disks.refresh_list();
+                        self.components.refresh_list();
+                        self.networks.refresh_list();
+                    }
 
-                            ui.horizontal(|ui| {
-                                ui.label("Memori:");
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    ui.label(&self.mem_info);
-                                });
-                            });
+                    ui.add_space(20.0);
 
-                            ui.horizontal(|ui| {
-                                ui.label("CPU Load:");
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    ui.label(&self.cpu_info);
-                                });
-                            });
+                    // --- SECTION: CPU PER CORE ---
+                    ios_card(ui, "CPU CORES", |ui| {
+                        for (i, cpu) in self.sys.cpus().iter().enumerate() {
+                            row(ui, &format!("Core #{}", i), &format!("{:.1}% @ {}MHz", cpu.cpu_usage(), cpu.frequency()));
+                        }
+                    });
 
-                            ui.horizontal(|ui| {
-                                ui.label("Sistem:");
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    // Fix E0599: Menggunakan associated function untuk System::name()
-                                    ui.label(System::name().unwrap_or_else(|| "Android".to_string()));
-                                });
-                            });
-                        });
-                }
+                    // --- SECTION: MEMORY & STORAGE ---
+                    ios_card(ui, "STORAGE & RAM", |ui| {
+                        let total_ram = self.sys.total_memory() / 1024 / 1024;
+                        let used_ram = self.sys.used_memory() / 1024 / 1024;
+                        row(ui, "RAM Usage", &format!("{}MB / {}MB", used_ram, total_ram));
+                        
+                        for disk in self.disks.iter() {
+                            let total = disk.total_space() / 1024 / 1024 / 1024;
+                            let free = disk.available_space() / 1024 / 1024 / 1024;
+                            row(ui, "Disk Path", &format!("{:?}", disk.mount_point()));
+                            row(ui, "Disk Size", &format!("{}GB Free / {}GB", free, total));
+                        }
+                    });
+
+                    // --- SECTION: NETWORK FLOW ---
+                    ios_card(ui, "NETWORKS", |ui| {
+                        for (name, data) in self.networks.iter() {
+                            row(ui, name, &format!("⬇{:.1}KB ⬆{:.1}KB", 
+                                data.received() as f32 / 1024.0, 
+                                data.transmitted() as f32 / 1024.0));
+                        }
+                    });
+
+                    // --- SECTION: TOP PROCESSES (Heavy RAM) ---
+                    ios_card(ui, "TOP PROCESSES", |ui| {
+                        let mut procs: Vec<_> = self.sys.processes().values().collect();
+                        procs.sort_by(|a, b| b.memory().cmp(&a.memory())); // Urutkan RAM terbesar
+                        
+                        for p in procs.iter().take(5) { // Ambil 5 teratas
+                            row(ui, p.name(), &format!("{:.1}MB", p.memory() as f32 / 1024.0 / 1024.0));
+                        }
+                    });
+
+                    ui.add_space(40.0);
+                });
             });
         });
     }
+}
+
+// UI Helper: Kartu ala iOS
+fn ios_card(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
+    ui.label(egui::RichText::new(title).size(14.0).color(egui::Color32::GRAY));
+    egui::Frame::none()
+        .fill(egui::Color32::WHITE)
+        .rounding(egui::Rounding::same(12.0))
+        .inner_margin(15.0)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width() * 0.95);
+            ui.vertical(add_contents);
+        });
+    ui.add_space(15.0);
+}
+
+// UI Helper: Baris data
+fn row(ui: &mut egui::Ui, label: &str, value: &str) {
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(label).color(egui::Color32::BLACK));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(egui::RichText::new(value).color(egui::Color32::from_rgb(0, 122, 255)));
+        });
+    });
 }
