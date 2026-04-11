@@ -1,16 +1,19 @@
 slint::include_modules!();
 
-// Link backend android agar tidak hilang saat kompilasi
+// Ini krusial agar backend android tidak dibuang saat optimasi
 #[cfg(target_os = "android")]
-use i_slint_backend_android_activity as _;
+#[no_mangle]
+pub extern "C" fn slint_android_backend_linker_fix() {
+    i_slint_backend_android_activity::set_requested_graphics_api(
+        i_slint_backend_android_activity::GraphicsApi::NativeWindow
+    );
+}
 
 #[no_mangle]
 pub extern "C" fn android_main(app: slint::android::AndroidApp) {
-    // Inisialisasi UI
-    let ui = AppWindow::new().unwrap();
-    
-    // Slint butuh tahu 'app' mana yang mengaturnya di Android
+    // Inisialisasi dengan app context
     slint::android::init(app).unwrap();
     
+    let ui = AppWindow::new().unwrap();
     ui.run().unwrap();
 }
