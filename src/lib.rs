@@ -7,20 +7,19 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    ui.on_take_photo_watermark(move || {
+    ui.on_take_smart_photo(move || {
         let ui = ui_handle.unwrap();
-        ui.set_status_text("Memproses Kamera & Watermark...".into());
-
-        // LOGIKA WATERMARK JNI:
-        // 1. Ambil Bitmap dari Kamera via JNI
-        // 2. Buat Canvas di Android (JNI)
-        // 3. Draw Text "Odfiz 2026" di pojok bawah
-        // 4. Simpan ke MediaStore
         
-        println!("Odfiz Log: Watermark Process Started");
+        // Di sini kita trigger JNI ke MainActivity Java
+        // Kita beri pesan log dulu untuk testing
+        println!("Odfiz: Memicu JNI Smart Camera...");
+        ui.set_status_text("Kamera Aktif: Mengambil koordinat GPS & Waktu...".into());
         
-        // Simulasi berhasil
-        ui.set_status_text("Foto Berhasil Disimpan: /Internal/Odfiz/IMG_001.jpg".into());
+        /* Nanti di sisi Java, Mas tinggal implementasi:
+           1. SimpleDateFormat untuk Jam
+           2. LocationManager untuk GPS
+           3. Canvas.drawText untuk Watermark
+        */
     });
 
     ui.run().unwrap();

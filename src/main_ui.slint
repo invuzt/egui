@@ -1,48 +1,52 @@
 import { Button, VerticalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Watermark Cam";
+    title: "Odfiz Smart Cam";
     background: #FFFFFF;
     
-    in-out property <string> status-text: "Siap Ambil Foto";
-    callback take-photo-watermark();
+    in-out property <string> status-text: "Siap Ambil Data";
+    callback take-smart-photo();
 
     ScrollView {
         VerticalBox {
+            padding: 20px;
             padding-top: 70px;
             spacing: 20px;
 
             Text {
-                text: "Odfiz Camera System";
-                font-size: 24px;
-                font-weight: 700;
+                text: "Odfiz Smart Camera";
+                font-size: 26px;
+                font-weight: 800;
                 horizontal-alignment: center;
+                color: #2d5af0;
             }
 
             Rectangle {
-                background: #F5F5F5;
-                border-radius: 12px;
-                height: 100px;
+                background: #F8F9FA;
+                border-radius: 15px;
+                height: 120px;
                 Text {
                     padding: 15px;
                     text: root.status-text;
                     wrap: word-wrap;
                     horizontal-alignment: center;
+                    font-size: 14px;
                 }
             }
 
             Button {
-                text: "AMBIL FOTO + WATERMARK";
+                text: "AMBIL FOTO + GPS + JAM";
                 primary: true;
                 height: 55px;
                 clicked => {
-                    root.take-photo-watermark();
+                    root.status-text = "Menghubungi Sistem Android...";
+                    root.take-smart-photo();
                 }
             }
-            
+
             Text {
-                text: "Hasil akan disimpan otomatis ke folder Gallery";
-                font-size: 12px;
+                text: "Otomatis Watermark: Odfiz, GPS, & Waktu";
+                font-size: 11px;
                 color: gray;
                 horizontal-alignment: center;
             }
