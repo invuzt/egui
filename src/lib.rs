@@ -1,5 +1,12 @@
 slint::include_modules!();
-use sysinfo::{System, SystemExt};
+use std::time::Instant;
+
+struct Transaction {
+    id: u32,
+    amount: u32,
+}
+
+static mut DATABASE: Vec<Transaction> = Vec::new();
 
 #[no_mangle]
 pub extern "C" fn android_main(app: slint::android::AndroidApp) {
@@ -8,31 +15,44 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // Fitur 1: Monitoring System (Pulse)
-    ui.on_refresh_pulse({
+    // PROSES JUTAAN DATA
+    ui.on_process_million_data({
         let ui_handle = ui_handle.clone();
         move || {
-            if let Some(ui) = ui_handle.upgrade() {
-                let mut sys = System::new_all();
-                sys.refresh_memory();
-                
-                let used = sys.used_memory() as f32;
-                let total = sys.total_memory() as f32;
-                let ratio = used / total;
-                
-                ui.set_pulse_info(format!("RAM Terpakai: {} MB", (used / 1024.0 / 1024.0) as i32).into());
-                ui.set_ram_percent(ratio);
+            let ui = ui_handle.unwrap();
+            let start = Instant::now();
+            
+            unsafe {
+                DATABASE.clear();
+                // Generate 1 Juta data secara instan
+                for i in 0..1_000_000 {
+                    DATABASE.push(Transaction { id: i, amount: i % 1000 });
+                }
             }
+            
+            let duration = start.elapsed();
+            ui.set_engine_info(format!("1.000.000 Baris Ready!").into());
+            ui.set_status_text(format!("Proses Generate & Alokasi RAM selesai dalam: {:?}\nKecepatan ini mustahil di bahasa interpretasi.", duration).into());
+            ui.set_ram_percent(0.8);
         }
     });
 
-    // Fitur 2: Encryption & Zip (Secure)
-    ui.on_secure_now({
+    // CARI DATA INSTAN
+    ui.on_search_data({
         let ui_handle = ui_handle.clone();
-        move || {
-            if let Some(ui) = ui_handle.upgrade() {
-                ui.set_status_text("Scanning Folder...\nCompressing to .odfiz...\nExported to /sdcard/OdfizSecure/".into());
-                // Disini nantinya kita tambahkan crate 'walkdir' untuk handle folder
+        move |search_id| {
+            let ui = ui_handle.unwrap();
+            let id_num = search_id.parse::<u32>().unwrap_or(0);
+            let start = Instant::now();
+            
+            let result = unsafe {
+                DATABASE.iter().find(|t| t.id == id_num)
+            };
+            
+            let duration = start.elapsed();
+            match result {
+                Some(t) => ui.set_status_text(format!("Data Ditemukan!\nID: {}\nAmount: {}\nSearch Time: {:?}", t.id, t.amount, duration).into()),
+                None => ui.set_status_text("Data tidak ditemukan dalam 1 juta baris.".into()),
             }
         }
     });

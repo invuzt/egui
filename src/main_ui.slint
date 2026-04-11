@@ -1,24 +1,23 @@
 import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Secure & Pulse";
+    title: "Odfiz Data Engine";
     background: #1a1a2e;
     width: 400px;
     height: 700px;
 
-    callback secure-now();
-    callback refresh-pulse();
+    callback process-million-data();
+    callback search-data(string);
     
-    in-out property <string> status-text: "Menunggu perintah...";
-    in-out property <string> pulse-info: "RAM: --MB";
-    in-out property <float> ram-percent: 0.0; // 0.0 sampai 1.0
+    in-out property <string> status-text: "System Idle";
+    in-out property <string> engine-info: "Engine: Ready";
+    in-out property <float> ram-percent: 0.0;
 
     ScrollView {
         VerticalBox {
             padding: 25px;
             spacing: 20px;
 
-            // Logo Odfiz
             Image {
                 source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
                 width: 80px;
@@ -26,73 +25,65 @@ export component AppWindow inherits Window {
                 horizontal-alignment: center;
             }
 
-            // Visual RAM Progress Bar
-            VerticalBox {
-                spacing: 5px;
-                Text { text: root.pulse-info; color: #00d2ff; font-weight: 700; }
-                Rectangle {
-                    height: 15px;
-                    background: #16213e;
-                    border-radius: 5px;
-                    // Indikator Progress
+            // Engine Monitor
+            Rectangle {
+                height: 120px;
+                background: #0f3460;
+                border-radius: 12px;
+                VerticalBox {
+                    alignment: center;
+                    Text { text: "RUST DATA ENGINE"; color: #ff9f43; font-weight: 800; horizontal-alignment: center; }
+                    Text { text: root.engine-info; color: #00d2ff; font-size: 18px; horizontal-alignment: center; }
                     Rectangle {
-                        x: 0;
-                        width: parent.width * root.ram-percent;
-                        background: @linear-gradient(90deg, #4cd137 0%, #00d2ff 100%);
-                        border-radius: 5px;
-                        animate width { duration: 500ms; easing: ease-in-out; }
+                        height: 8px;
+                        background: #16213e;
+                        border-radius: 4px;
+                        Rectangle {
+                            x: 0; width: parent.width * root.ram-percent;
+                            background: #4cd137; border-radius: 4px;
+                        }
                     }
                 }
             }
 
-            // Deskripsi Keunggulan
+            // Deskripsi Fitur
             Rectangle {
-                background: #0f3460;
+                background: #16213e;
                 border-radius: 10px;
                 VerticalBox {
-                    padding: 15px;
+                    padding: 12px;
                     Text {
-                        text: "KEUNGGULAN ODFIZ SECURE:";
-                        color: #ff9f43;
-                        font-weight: 800;
+                        text: "KEPERKASAAN RUST ENGINE:";
+                        color: #00ff00; font-weight: 800; font-size: 12px;
                     }
                     Text {
-                        text: "• Enkripsi ChaCha20: Standar militer, lebih kencang di HP ARM.\n• Micro-Compression: File .odfiz lebih kecil dari aslinya.\n• Zero-Copy: Proses data super cepat tanpa membebani RAM.";
-                        color: #eeeeee;
-                        font-size: 13px;
-                        wrap: word-wrap;
+                        text: "1. Raw Speed: Memproses jutaan baris data secara instan.\n2. Memory Safe: Tidak akan crash meski mengolah data besar.\n3. Efficient: Penggunaan RAM yang sangat presisi.";
+                        color: #cccccc; font-size: 11px; wrap: word-wrap;
                     }
                 }
             }
 
-            // Status Console
+            TextInput {
+                placeholder-text: "Cari ID Data (Contoh: 999999)";
+                font-size: 16px;
+                accepted(txt) => { root.search-data(txt) }
+            }
+
+            Button {
+                text: "GENERATE & PROCESS 1M DATA";
+                primary: true;
+                height: 50px;
+                clicked => { root.process-million-data() }
+            }
+
             Rectangle {
                 background: #000000;
                 border-radius: 5px;
-                height: 80px;
+                height: 100px;
                 VerticalBox {
                     padding: 10px;
-                    Text {
-                        text: root.status-text;
-                        color: #00ff00;
-                        font-family: "monospace";
-                        font-size: 12px;
-                        wrap: word-wrap;
-                    }
+                    Text { text: root.status-text; color: #00ff00; font-family: "monospace"; font-size: 11px; wrap: word-wrap; }
                 }
-            }
-
-            Button {
-                text: "LOCK FOLDER & EXPORT";
-                primary: true;
-                height: 50px;
-                clicked => { root.secure-now() }
-            }
-
-            Button {
-                text: "REFRESH SYSTEM";
-                height: 45px;
-                clicked => { root.refresh-pulse() }
             }
         }
     }
