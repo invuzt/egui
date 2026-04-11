@@ -25,30 +25,25 @@ export component AppWindow inherits Window {
                 background: #F8F9FA;
                 border-radius: 15px;
                 height: 120px;
-                Text {
+                // Padding dipindah ke VerticalBox di dalam Rectangle biar gak warning
+                VerticalBox {
                     padding: 15px;
-                    text: root.status-text;
-                    wrap: word-wrap;
-                    horizontal-alignment: center;
-                    font-size: 14px;
+                    Text {
+                        text: root.status-text;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                        font-size: 14px;
+                    }
                 }
             }
 
             Button {
-                text: "AMBIL FOTO + GPS + JAM";
+                text: "AMBIL FOTO (SYSTEM)";
                 primary: true;
                 height: 55px;
                 clicked => {
-                    root.status-text = "Menghubungi Sistem Android...";
                     root.take-smart-photo();
                 }
-            }
-
-            Text {
-                text: "Otomatis Watermark: Odfiz, GPS, & Waktu";
-                font-size: 11px;
-                color: gray;
-                horizontal-alignment: center;
             }
         }
     }
