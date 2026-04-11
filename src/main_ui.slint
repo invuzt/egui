@@ -1,69 +1,60 @@
 import { Button, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Modern UI";
-    background: #F2F2F7; // iOS System Background
-    default-font-family: "sans-serif";
+    title: "Odfiz Material";
+    background: #FDF8FF; // Warna Surface (Tone pastel)
     
-    // Properti untuk komunikasi dengan Rust
     in-out property <string> input-text;
-    in-out property <string> status-text: "Sistem Ready - Performa Maksimal";
+    in-out property <string> status-text: "Sistem Ready";
     callback process-data(string);
 
     VerticalLayout {
         padding: 24px;
         padding-top: 70px;
-        spacing: 25px;
-        alignment: start;
+        spacing: 16px;
 
         Text {
-            text: "Odfiz Core";
+            text: "Odfiz Material";
             font-size: 32px;
-            font-weight: 700;
-            color: #000000;
-            horizontal-alignment: center;
+            font-weight: 500; // Material You lebih suka Medium weight
+            color: #1C1B1F;
         }
 
-        // Input Field Style iOS
         LineEdit {
-            placeholder-text: "Masukkan data...";
-            height: 50px;
+            placeholder-text: "Input data...";
+            height: 56px; // Tinggi standar Material
             text <=> root.input-text;
         }
 
-        // Dashboard Card iOS Style
+        // Card dengan Tonal Color
         Rectangle {
-            background: #FFFFFF;
-            border-radius: 14px;
-            height: 130px;
+            background: #EADDFF; // Primary Container Color
+            border-radius: 28px; // Radius besar khas Material You
+            height: 140px;
             
             VerticalLayout {
                 padding: 20px;
-                spacing: 12px;
                 Text {
-                    text: "STATUS LOG";
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #8E8E93; // iOS Secondary Label
+                    text: "STATUS";
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #21005D;
                 }
                 Text {
                     text: root.status-text;
-                    font-size: 17px;
-                    font-weight: 500;
-                    color: #000000;
+                    font-size: 16px;
+                    color: #21005D;
                     wrap: word-wrap;
                 }
             }
         }
 
-        // Button iOS Style (Blue)
+        // Filled Button (M3 Style)
         Button {
-            text: "PROSES DATA";
+            text: "Kirim Data";
             primary: true;
-            height: 54px;
-            clicked => {
-                root.process-data(root.input-text);
-            }
+            height: 40px;
+            clicked => { root.process-data(root.input-text); }
         }
     }
 }
