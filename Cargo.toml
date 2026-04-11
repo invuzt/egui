@@ -1,5 +1,5 @@
 [package]
-name = "odfiz_miniquad"
+name = "odfiz_slint"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,10 +7,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-miniquad = "0.4"
-# Paksa pakai 0.27 agar sinkron dengan egui-miniquad
-egui = "=0.27.2"
-egui-miniquad = "=0.16.0"
+slint = { version = "1.9", features = ["compat-1-2", "renderer-software"] }
+
+[build-dependencies]
+slint-build = "1.9"
 
 [profile.release]
 opt-level = "z"

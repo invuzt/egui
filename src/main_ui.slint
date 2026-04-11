@@ -1,0 +1,64 @@
+import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    background: #f2f2f7; // iOS Gray
+    title: "Odfiz Slint";
+    
+    VerticalBox {
+        padding: 25px;
+        spacing: 15px;
+        alignment: start;
+
+        // Header ala Modern App
+        Text {
+            text: "Odfiz Modern UI";
+            font-size: 32px;
+            font-weight: 900;
+            color: #007aff; // iOS Blue
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: "Running on Rust Slint Engine";
+            font-size: 14px;
+            color: #8e8e93;
+            horizontal-alignment: center;
+        }
+
+        // Input Box
+        LineEdit {
+            placeholder-text: "Ketik di sini...";
+            font-size: 16px;
+            height: 45px;
+        }
+
+        // Card View ala Kotlin/Java
+        Rectangle {
+            background: white;
+            border-radius: 15px;
+            height: 120px;
+            drop-shadow-blur: 10px;
+            drop-shadow-color: #00000015;
+            
+            VerticalBox {
+                padding: 15px;
+                Text {
+                    text: "Dashboard Status";
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1c1c1e;
+                }
+                Text {
+                    text: "Sistem Ready - Performa Maksimal";
+                    color: #4cd964; // Hijau Sukses
+                }
+            }
+        }
+
+        Button {
+            text: "UPDATE SISTEM";
+            primary: true;
+            height: 50px;
+        }
+    }
+}
