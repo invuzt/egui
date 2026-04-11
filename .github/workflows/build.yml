@@ -22,10 +22,12 @@ jobs:
         with:
           targets: aarch64-linux-android
 
+      # CACHE TINGKAT DEWA: Cargo registry & Target folder
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "android-build"
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
+          cache-targets: "true"
 
       - name: Install cargo-ndk
         run: |
@@ -35,16 +37,10 @@ jobs:
 
       - name: Build Rust Lib (Release)
         run: |
-          # Install platform secara paksa
           sdkmanager "platforms;android-33"
-          
-          # Set variabel untuk shell ini
           export ANDROID_HOME=$ANDROID_SDK_ROOT
-          export ANDROID_PLATFORM=android-33
-          # Path absolut ke android.jar (ini yang dicari Slint)
           export ANDROID_JAR=$ANDROID_HOME/platforms/android-33/android.jar
           
-          # Daftarkan ke environment GitHub agar Cargo NDK bisa baca
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_JAR=$ANDROID_JAR" >> $GITHUB_ENV
           
