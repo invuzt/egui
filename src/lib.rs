@@ -1,129 +1,80 @@
-#![cfg(target_os = "android")]
 mod theme;
 
-use eframe::egui;
-use sysinfo::{System, Disks, Components, Networks};
+use miniquad::*;
+use egui_miniquad::RenderPass;
+use sysinfo::System;
 
-struct OdfizZero {
+struct Stage {
+    egui_mq: RenderPass,
     sys: System,
-    disks: Disks,
-    components: Components,
-    networks: Networks,
-    show_sys_info: bool,
+    mem_info: String,
+    cpu_info: String,
+    show_info: bool,
 }
 
-#[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    let mut options = eframe::NativeOptions::default();
-    options.event_loop_builder = Some(Box::new(move |builder| {
-        use winit::platform::android::EventLoopBuilderExtAndroid;
-        builder.with_android_app(app);
-    }));
-
-    let _ = eframe::run_native(
-        "Odfiz Deep Top",
-        options,
-        Box::new(|cc| {
-            theme::apply_ios_style(&cc.egui_ctx);
-            Box::new(OdfizZero { 
-                sys: System::new_all(),
-                disks: Disks::new_with_refreshed_list(),
-                components: Components::new_with_refreshed_list(),
-                networks: Networks::new_with_refreshed_list(),
-                show_sys_info: false,
-            })
-        }),
-    );
-}
-
-impl eframe::App for OdfizZero {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(50.0);
-            
-            egui::ScrollArea::vertical()
-                .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
-                .show(ui, |ui| {
-                ui.vertical_centered(|ui| {
-                    ui.label(egui::RichText::new("Odfiz System Deep").size(28.0).strong());
-                    ui.add_space(20.0);
-
-                    if ui.add_sized([ui.available_width() * 0.9, 50.0], egui::Button::new("🔍 REFRESH ALL DATA")).clicked() {
-                        self.sys.refresh_all();
-                        self.disks.refresh_list();
-                        self.components.refresh_list();
-                        self.networks.refresh_list();
-                    }
-
-                    ui.add_space(20.0);
-
-                    // --- SECTION: CPU PER CORE ---
-                    ios_card(ui, "CPU CORES", |ui| {
-                        for (i, cpu) in self.sys.cpus().iter().enumerate() {
-                            row(ui, &format!("Core #{}", i), &format!("{:.1}% @ {}MHz", cpu.cpu_usage(), cpu.frequency()));
-                        }
-                    });
-
-                    // --- SECTION: MEMORY & STORAGE ---
-                    ios_card(ui, "STORAGE & RAM", |ui| {
-                        let total_ram = self.sys.total_memory() / 1024 / 1024;
-                        let used_ram = self.sys.used_memory() / 1024 / 1024;
-                        row(ui, "RAM Usage", &format!("{}MB / {}MB", used_ram, total_ram));
-                        
-                        for disk in self.disks.iter() {
-                            let total = disk.total_space() / 1024 / 1024 / 1024;
-                            let free = disk.available_space() / 1024 / 1024 / 1024;
-                            row(ui, "Disk Path", &format!("{:?}", disk.mount_point()));
-                            row(ui, "Disk Size", &format!("{}GB Free / {}GB", free, total));
-                        }
-                    });
-
-                    // --- SECTION: NETWORK FLOW ---
-                    ios_card(ui, "NETWORKS", |ui| {
-                        for (name, data) in self.networks.iter() {
-                            row(ui, name, &format!("⬇{:.1}KB ⬆{:.1}KB", 
-                                data.received() as f32 / 1024.0, 
-                                data.transmitted() as f32 / 1024.0));
-                        }
-                    });
-
-                    // --- SECTION: TOP PROCESSES (Heavy RAM) ---
-                    ios_card(ui, "TOP PROCESSES", |ui| {
-                        let mut procs: Vec<_> = self.sys.processes().values().collect();
-                        procs.sort_by(|a, b| b.memory().cmp(&a.memory())); // Urutkan RAM terbesar
-                        
-                        for p in procs.iter().take(5) { // Ambil 5 teratas
-                            row(ui, p.name(), &format!("{:.1}MB", p.memory() as f32 / 1024.0 / 1024.0));
-                        }
-                    });
-
-                    ui.add_space(40.0);
-                });
-            });
-        });
+impl Stage {
+    fn new() -> Self {
+        Self {
+            egui_mq: RenderPass::new(),
+            sys: System::new_all(),
+            mem_info: "No Data".into(),
+            cpu_info: "No Data".into(),
+            show_info: false,
+        }
     }
 }
 
-// UI Helper: Kartu ala iOS
-fn ios_card(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
-    ui.label(egui::RichText::new(title).size(14.0).color(egui::Color32::GRAY));
-    egui::Frame::none()
-        .fill(egui::Color32::WHITE)
-        .rounding(egui::Rounding::same(12.0))
-        .inner_margin(15.0)
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width() * 0.95);
-            ui.vertical(add_contents);
+impl EventHandler for Stage {
+    fn update(&mut self) {}
+
+    fn draw(&mut self) {
+        // Mulai menggambar ke layar
+        self.egui_mq.run(|ctx| {
+            // Pasang tema iOS
+            theme::apply_ios_style(ctx);
+
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.add_space(50.0);
+                ui.vertical_centered(|ui| {
+                    ui.label(egui::RichText::new("Odfiz Miniquad").size(28.0).strong());
+                    ui.add_space(20.0);
+
+                    if ui.button("Toggle System Info").clicked() {
+                        self.show_info = !self.show_info;
+                    }
+
+                    if self.show_info {
+                        ui.add_space(20.0);
+                        if ui.button("🔄 REFRESH DATA").clicked() {
+                            self.sys.refresh_all();
+                            self.mem_info = format!("{:.0}MB Used", self.sys.used_memory() as f32 / 1024.0 / 1024.0);
+                            if let Some(cpu) = self.sys.cpus().first() {
+                                self.cpu_info = format!("{:.1}%", cpu.cpu_usage());
+                            }
+                        }
+
+                        ui.add_space(10.0);
+                        ui.label(format!("RAM: {}", self.mem_info));
+                        ui.label(format!("CPU: {}", self.cpu_info));
+                    }
+                });
+            });
         });
-    ui.add_space(15.0);
+
+        // Render hasil gambar egui ke layar lewat Miniquad
+        self.egui_mq.draw();
+    }
 }
 
-// UI Helper: Baris data
-fn row(ui: &mut egui::Ui, label: &str, value: &str) {
-    ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(label).color(egui::Color32::BLACK));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(egui::RichText::new(value).color(egui::Color32::from_rgb(0, 122, 255)));
-        });
+#[no_mangle]
+pub extern "C" fn sapp_js_main() {
+    // Kosong untuk Android, tapi wajib ada jika targetnya multiplatform
+}
+
+// Entry point untuk Android NDK
+#[no_mangle]
+pub extern "C" fn android_main(app: miniquad::native::android::AndroidApp) {
+    miniquad::start(conf::Conf::default(), |_| {
+        Box::new(Stage::new())
     });
 }
