@@ -2,10 +2,13 @@
 mod theme;
 
 use eframe::egui;
+use sysinfo::{System, SystemExt, CpuExt};
 
 struct OdfizZero {
-    val: f32,
-    status: String,
+    sys: System,
+    mem_info: String,
+    cpu_info: String,
+    show_sys_info: bool, // Switch untuk menyembunyikan fitur
 }
 
 #[no_mangle]
@@ -22,8 +25,10 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         Box::new(|cc| {
             theme::apply_minimal_style(&cc.egui_ctx);
             Box::new(OdfizZero { 
-                val: 50.0,
-                status: "Sistem Siap".to_string(),
+                sys: System::new_all(),
+                mem_info: "-".to_string(),
+                cpu_info: "-".to_string(),
+                show_sys_info: false,
             })
         }),
     );
@@ -31,36 +36,41 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 
 impl eframe::App for OdfizZero {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // TANPA request_repaint() = CPU 0% saat diam
-        
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(100.0);
-
-                ui.label("KONTROL POWER");
-                
-                // Slider sebagai pengganti input angka (Tanpa Keyboard)
-                ui.add(egui::Slider::new(&mut self.val, 0.0..=100.0).text("%"));
-                
+                ui.heading("ODFIZ CLEAN UI");
                 ui.add_space(20.0);
 
-                ui.horizontal_centered(|ui| {
-                    if ui.button(" MIN ").clicked() { 
-                        self.val = 0.0;
-                        self.status = "Set ke Minimum".to_string();
-                    }
-                    if ui.button(" MAX ").clicked() { 
-                        self.val = 100.0;
-                        self.status = "Set ke Maksimum".to_string();
-                    }
-                });
+                // TOMBOL RAHASIA (Hanya Switch)
+                if ui.button("Buka Tools").clicked() {
+                    self.show_sys_info = !self.show_sys_info;
+                }
 
-                ui.add_space(40.0);
-                ui.separator();
-                ui.add_space(20.0);
-                
-                ui.label(format!("STATUS: {}", self.status));
-                ui.label(format!("OUTPUT RUST: {:.1}", self.val));
+                if self.show_sys_info {
+                    ui.add_space(20.0);
+                    ui.separator();
+                    ui.add_space(20.0);
+
+                    // REFRESH HANYA SAAT TOMBOL DITEKAN (Hemat Baterai 100%)
+                    if ui.button("REFRESH SYSTEM INFO").clicked() {
+                        self.sys.refresh_all();
+                        
+                        let total_mem = self.sys.total_memory() / 1024 / 1024;
+                        let used_mem = self.sys.used_memory() / 1024 / 1024;
+                        self.mem_info = format!("RAM: {}MB / {}MB", used_mem, total_mem);
+                        
+                        // Ambil data CPU core pertama sebagai sampel
+                        if let Some(cpu) = self.sys.cpus().first() {
+                            self.cpu_info = format!("CPU Load: {:.1}%", cpu.cpu_usage());
+                        }
+                    }
+
+                    ui.add_space(10.0);
+                    ui.label(&self.mem_info);
+                    ui.label(&self.cpu_info);
+                    ui.label(format!("OS: {:?}", self.sys.name().unwrap_or_default()));
+                }
             });
         });
     }
