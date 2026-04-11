@@ -3,9 +3,9 @@ mod theme;
 
 use eframe::egui;
 
-struct OdfizHello {
-    user_name: String,
-    rust_response: String,
+struct OdfizZero {
+    val: f32,
+    status: String,
 }
 
 #[no_mangle]
@@ -17,45 +17,50 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Hello",
+        "Odfiz Zero",
         options,
         Box::new(|cc| {
-            theme::apply_basic_style(&cc.egui_ctx);
-            Box::new(OdfizHello { 
-                user_name: String::new(),
-                rust_response: String::new(),
+            theme::apply_minimal_style(&cc.egui_ctx);
+            Box::new(OdfizZero { 
+                val: 50.0,
+                status: "Sistem Siap".to_string(),
             })
         }),
     );
 }
 
-impl eframe::App for OdfizHello {
+impl eframe::App for OdfizZero {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // TANPA request_repaint() = CPU 0% saat diam
+        
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(50.0);
-                ui.heading("RUST NDK - HELLO WORLD");
+                ui.add_space(100.0);
+
+                ui.label("KONTROL POWER");
+                
+                // Slider sebagai pengganti input angka (Tanpa Keyboard)
+                ui.add(egui::Slider::new(&mut self.val, 0.0..=100.0).text("%"));
+                
                 ui.add_space(20.0);
 
-                ui.label("Masukkan nama Anda:");
-                let input = ui.text_edit_singleline(&mut self.user_name);
-                
-                ui.add_space(10.0);
-
-                if ui.button("KIRIM KE RUST").clicked() || (input.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
-                    if self.user_name.trim().is_empty() {
-                        self.rust_response = "Rust: Tolong isi namanya dulu ya!".to_string();
-                    } else {
-                        self.rust_response = format!("Rust bilang: Halo {}, selamat datang di dunia Rust NDK!", self.user_name);
+                ui.horizontal_centered(|ui| {
+                    if ui.button(" MIN ").clicked() { 
+                        self.val = 0.0;
+                        self.status = "Set ke Minimum".to_string();
                     }
-                }
+                    if ui.button(" MAX ").clicked() { 
+                        self.val = 100.0;
+                        self.status = "Set ke Maksimum".to_string();
+                    }
+                });
 
-                if !self.rust_response.is_empty() {
-                    ui.add_space(30.0);
-                    ui.separator();
-                    ui.add_space(10.0);
-                    ui.label(egui::RichText::new(&self.rust_response).size(18.0).strong());
-                }
+                ui.add_space(40.0);
+                ui.separator();
+                ui.add_space(20.0);
+                
+                ui.label(format!("STATUS: {}", self.status));
+                ui.label(format!("OUTPUT RUST: {:.1}", self.val));
             });
         });
     }
