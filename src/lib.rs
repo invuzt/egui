@@ -7,7 +7,8 @@ use eframe::egui::{RichText, Color32};
 
 struct OdfizShell {
     mm: features::ModuleManager,
-    active_tab: usize,
+    search_query: String,
+    show_search_menu: bool,
 }
 
 #[no_mangle]
@@ -19,102 +20,111 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Marketplace",
+        "Odfiz Pro",
         options,
         Box::new(|cc| {
             let mut style = (*cc.egui_ctx.style()).clone();
             style.visuals = egui::Visuals::light();
             style.visuals.panel_fill = theme::COLOR_BG;
             cc.egui_ctx.set_style(style);
-            Box::new(OdfizShell { mm: features::ModuleManager::new(), active_tab: 0 })
+            Box::new(OdfizShell { 
+                mm: features::ModuleManager::new(), 
+                search_query: String::new(),
+                show_search_menu: false 
+            })
         }),
     );
 }
 
 impl eframe::App for OdfizShell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // --- BOTTOM NAVIGATION BAR ---
-        egui::TopBottomPanel::bottom("nav").show(ctx, |ui| {
-            ui.set_height(70.0);
-            ui.horizontal_centered(|ui| {
-                let w = ui.available_width() / 5.0;
-                if ui.add_sized([w, 50.0], egui::Button::new("🏠\nHome").frame(false)).clicked() { self.active_tab = 0; }
-                if ui.add_sized([w, 50.0], egui::Button::new("❤️\nFav").frame(false)).clicked() { }
-                
-                // Tombol Plus Tengah
-                ui.add_space(w/4.0);
-                if ui.add(egui::Button::new(RichText::new(" + ").size(25.0).color(Color32::WHITE))
-                    .fill(theme::COLOR_ACCENT).rounding(20.0)).clicked() { }
-                ui.add_space(w/4.0);
-
-                if ui.add_sized([w, 50.0], egui::Button::new("💬\nChat").frame(false)).clicked() { }
-                if ui.add_sized([w, 50.0], egui::Button::new("👤\nProfile").frame(false)).clicked() { }
-            });
-        });
-
-        // --- MAIN CONTENT ---
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(20.0);
             
-            // Header: Brand & Location
+            // --- TOP BAR: HAMBURGER & NOTIF ---
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Odfiz").size(24.0).strong().color(theme::COLOR_ACCENT));
-                ui.label(RichText::new("Ponorogo ⌄").size(14.0).color(Color32::GRAY));
+                ui.menu_button(RichText::new("☰").size(24.0).color(theme::COLOR_ACCENT), |ui| {
+                    ui.set_width(150.0);
+                    if ui.button("⚙ Settings").clicked() { ui.close_menu(); }
+                    ui.separator();
+                    if ui.button("ℹ About").clicked() { ui.close_menu(); }
+                });
+                
+                ui.add_space(5.0);
+                ui.label(RichText::new("Odfiz").size(20.0).strong());
+
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label("🔔");
+                    ui.label(RichText::new("🔔").size(20.0));
                 });
             });
 
-            ui.add_space(20.0);
-            ui.vertical_centered(|ui| {
-                ui.label(RichText::new("Your next service\nis just a tap away").size(22.0).strong());
-            });
-
-            ui.add_space(20.0);
-            theme::draw_search_bar(ui);
-
             ui.add_space(25.0);
 
-            // GRID MENU (Tempat Modul Mas)
-            ui.horizontal_wrapped(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(15.0, 15.0);
+            // --- SEARCH DROPDOWN ---
+            ui.vertical(|ui| {
+                let text_edit = egui::TextEdit::singleline(&mut self.search_query)
+                    .hint_text("Search services...")
+                    .margin(egui::Margin::symmetric(15.0, 12.0));
                 
-                if theme::draw_grid_item(ui, "🌐", "Lite Server", self.mm.server_open).clicked() {
+                let res = ui.add_sized([ui.available_width(), 45.0], text_edit);
+                
+                if res.has_focus() || !self.search_query.is_empty() {
+                    self.show_search_menu = true;
+                } else {
+                    self.show_search_menu = false;
+                }
+
+                if self.show_search_menu {
+                    egui::Frame::popup(ui.style()).show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        if ui.button("Recent: Lite Server").clicked() { self.mm.server_open = true; }
+                        if ui.button("Recent: Kasir").clicked() { self.mm.kasir_open = true; }
+                    });
+                }
+            });
+
+            ui.add_space(30.0);
+
+            // --- GRID MENU (WARNA-WARNI) ---
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing = egui::vec2(12.0, 12.0);
+                
+                // Server (Blue)
+                if theme::draw_grid_item(ui, "🌐", "Lite Server", Color32::from_rgb(59, 130, 246), self.mm.server_open).clicked() {
                     self.mm.server_open = !self.mm.server_open;
                     self.mm.kasir_open = false;
                 }
 
-                if theme::draw_grid_item(ui, "💰", "Kasir Odfiz", self.mm.kasir_open).clicked() {
+                // Kasir (Green)
+                if theme::draw_grid_item(ui, "💰", "Kasir Odfiz", Color32::from_rgb(34, 197, 94), self.mm.kasir_open).clicked() {
                     self.mm.kasir_open = !self.mm.kasir_open;
                     self.mm.server_open = false;
                 }
 
-                theme::draw_grid_item(ui, "🛠️", "Tools", false);
-                theme::draw_grid_item(ui, "👥", "Community", false);
+                // Tools (Orange)
+                theme::draw_grid_item(ui, "🛠️", "Tools", Color32::from_rgb(249, 115, 22), false);
+                
+                // Community (Purple)
+                theme::draw_grid_item(ui, "👥", "Community", Color32::from_rgb(168, 85, 247), false);
             });
 
-            ui.add_space(20.0);
-            ui.separator();
+            ui.add_space(25.0);
 
-            // AREA MODUL AKTIF (Muncul di bawah Grid)
+            // --- AREA MODUL AKTIF ---
             if self.mm.server_open || self.mm.kasir_open {
+                ui.separator();
+                ui.add_space(10.0);
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     egui::Frame::none()
                         .fill(Color32::WHITE)
                         .inner_margin(20.0)
                         .rounding(15.0)
-                        .stroke(egui::Stroke::new(1.0, theme::COLOR_BORDER))
+                        .stroke(egui::Stroke::new(1.0, Color32::from_rgb(230, 230, 230)))
                         .show(ui, |ui| {
                             ui.set_width(ui.available_width());
                             if self.mm.server_open { self.mm.server.ui(ui); }
                             if self.mm.kasir_open { self.mm.kasir.ui(ui); }
                         });
-                });
-            } else {
-                ui.add_space(40.0);
-                ui.vertical_centered(|ui| {
-                    ui.label(RichText::new("Popular in Ponorogo").size(18.0).strong());
-                    ui.label(RichText::new("Coming soon...").color(Color32::GRAY));
                 });
             }
         });
