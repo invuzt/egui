@@ -7,9 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Kunci semua ke versi 1.9.1 agar sinkron total
+# Kunci versi 1.9.1 agar stabil
 slint = { version = "=1.9.1", features = ["compat-1-2", "renderer-software"] }
-i-slint-backend-android-activity = "=1.9.1"
+# Tambahkan jembatan yang hilang tadi
 android-activity = { version = "0.6", features = ["game-activity"] }
 
 [build-dependencies]
