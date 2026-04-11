@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Kita nyalakan fitur backend-android di sini
-slint = { version = "1.9.1", features = ["compat-1-2", "renderer-software", "backend-android"] }
+# Pakai fitur yang tersedia di log error tadi
+slint = { version = "1.9.1", features = ["compat-1-2", "renderer-software", "backend-android-activity-06"] }
 android-activity = { version = "0.6", features = ["game-activity"] }
 
 [build-dependencies]
