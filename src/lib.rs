@@ -1,20 +1,16 @@
 #![cfg(target_os = "android")]
 mod features;
+mod theme;
 
 use eframe::egui;
-use eframe::egui::{Color32, Visuals, TextStyle, FontId, FontFamily, Frame, RichText, vec2};
+use eframe::egui::{RichText, Frame};
 use features::get_all_modules;
 
 struct OdfizShell {
-    modules: Vec<(bool, Box<dyn features::OdfizModule>)>,
-    active_feature: Option<usize>,
+    // Kita simpan status buka/tutup tiap modul di sini
+    module_states: Vec<bool>,
+    modules: Vec<Box<dyn features::OdfizModule>>,
 }
-
-const COLOR_BG: Color32 = Color32::from_rgb(15, 15, 15);
-const COLOR_CARD_OUTER: Color32 = Color32::from_rgb(25, 25, 25);
-const COLOR_CARD_INNER: Color32 = Color32::from_rgb(35, 35, 35);
-const COLOR_ACCENT: Color32 = Color32::from_rgb(244, 63, 94);
-const COLOR_TEXT_DIM: Color32 = Color32::from_rgb(120, 120, 120);
 
 #[no_mangle]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
@@ -29,15 +25,16 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         options,
         Box::new(|cc| {
             let mut style = (*cc.egui_ctx.style()).clone();
-            style.visuals = Visuals::dark();
-            style.visuals.panel_fill = COLOR_BG;
-            style.text_styles.insert(TextStyle::Heading, FontId::new(22.0, FontFamily::Proportional));
-            style.text_styles.insert(TextStyle::Body, FontId::new(18.0, FontFamily::Proportional));
+            style.visuals = egui::Visuals::dark();
+            style.visuals.panel_fill = theme::COLOR_BG;
             cc.egui_ctx.set_style(style);
 
+            let all = get_all_modules();
+            let count = all.len();
+            
             Box::new(OdfizShell { 
-                modules: get_all_modules(),
-                active_feature: None,
+                module_states: vec![false; count], // Semua tertutup di awal
+                modules: all.into_iter().map(|(_, m)| m).collect(),
             })
         }),
     );
@@ -47,71 +44,60 @@ impl eframe::App for OdfizShell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(50.0);
+            
+            ui.vertical_centered(|ui| {
+                ui.label(RichText::new("ODFIZ CORE SYSTEM")
+                    .strong()
+                    .size(16.0)
+                    .color(theme::COLOR_ACCENT)
+                    .extra_letter_spacing(2.0));
+                ui.add_space(20.0);
+            });
 
-            if self.active_feature.is_none() {
+            egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical_centered(|ui| {
-                    // FIX: Menggunakan extra_letter_spacing
-                    ui.label(RichText::new("ODFIZ CORE SYSTEM").strong().size(16.0).color(COLOR_ACCENT).extra_letter_spacing(2.0));
-                    ui.add_space(20.0);
-                });
+                    // Iterasi semua modul
+                    for (i, module) in self.modules.iter_mut().enumerate() {
+                        let is_open = self.module_states[i];
 
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.vertical_centered(|ui| {
-                        for (i, (_, module)) in self.modules.iter_mut().enumerate() {
-                            Frame::none()
-                                .fill(COLOR_CARD_OUTER)
-                                .inner_margin(20.0)
-                                .rounding(18.0)
-                                .show(ui, |ui| {
-                                    ui.set_width(ui.available_width() * 0.92);
-                                    Frame::none().fill(COLOR_CARD_INNER).inner_margin(12.0).rounding(10.0)
-                                        .stroke(egui::Stroke::new(1.0, COLOR_ACCENT)).show(ui, |ui| {
-                                            ui.set_min_width(ui.available_width());
-                                            ui.label(RichText::new("MODULE").color(COLOR_TEXT_DIM).size(10.0));
-                                            ui.label(RichText::new(module.name().to_uppercase()).strong().size(18.0));
-                                        });
-
-                                    ui.add_space(15.0);
-                                    if ui.add(egui::Button::new(RichText::new("OPEN MODULE").color(Color32::WHITE).strong())
-                                        .fill(COLOR_ACCENT).min_size(vec2(ui.available_width(), 45.0)).rounding(10.0)).clicked() {
-                                        self.active_feature = Some(i);
+                        theme::odfiz_card(ui, |ui| {
+                            ui.set_width(ui.available_width() * 0.95);
+                            
+                            // Baris Judul & Tombol Toggle
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new(module.name().to_uppercase())
+                                    .strong()
+                                    .color(if is_open { theme::COLOR_ACCENT } else { egui::Color32::WHITE }));
+                                
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    let icon = if is_open { "🔼" } else { "🔽" };
+                                    if ui.button(RichText::new(icon).size(14.0)).clicked() {
+                                        self.module_states[i] = !is_open; // Toggle buka/tutup
                                     }
                                 });
-                            ui.add_space(20.0);
-                        }
-                    });
-                });
-            } else {
-                ui.horizontal(|ui| {
-                    if ui.button(RichText::new("←").size(20.0).color(COLOR_ACCENT)).clicked() {
-                        self.active_feature = None;
-                    }
-                    ui.add_space(10.0);
-                    if let Some(i) = self.active_feature {
-                        // FIX: Menggunakan extra_letter_spacing
-                        ui.label(RichText::new(self.modules[i].1.name().to_uppercase())
-                            .strong()
-                            .size(16.0)
-                            .color(COLOR_ACCENT)
-                            .extra_letter_spacing(2.0));
-                    }
-                });
-                
-                ui.add_space(20.0);
+                            });
 
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    Frame::none()
-                        .fill(COLOR_CARD_OUTER)
-                        .inner_margin(20.0)
-                        .rounding(15.0)
-                        .show(ui, |ui| {
-                            ui.set_min_width(ui.available_width());
-                            if let Some(i) = self.active_feature {
-                                self.modules[i].1.ui(ui);
+                            // JIKA TERBUKA: Tampilkan konten di bawahnya
+                            if is_open {
+                                ui.add_space(15.0);
+                                ui.separator();
+                                ui.add_space(15.0);
+                                
+                                // Bungkus konten modul biar rapi
+                                ui.vertical(|ui| {
+                                    module.ui(ui);
+                                });
+                                
+                                ui.add_space(10.0);
+                                if ui.button(RichText::new("TUTUP MENU").size(12.0).color(theme::COLOR_TEXT_DIM)).clicked() {
+                                    self.module_states[i] = false;
+                                }
                             }
                         });
+                        ui.add_space(15.0);
+                    }
                 });
-            }
+            });
         });
     }
 }
