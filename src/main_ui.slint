@@ -1,56 +1,56 @@
-import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
+import { Button, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    background: #f2f2f7; // iOS Gray
-    title: "Odfiz Slint";
+    title: "Odfiz Modern UI";
+    background: #f4f7fa;
+    default-font-family: "sans-serif";
     
-    VerticalBox {
-        padding: 25px;
-        spacing: 15px;
+    VerticalLayout {
+        padding: 24px;
+        padding-top: 65px; // Turun sedikit agar tidak tertutup Status Bar
+        spacing: 22px;
         alignment: start;
 
-        // Header ala Modern App
         Text {
             text: "Odfiz Modern UI";
-            font-size: 32px;
-            font-weight: 900;
-            color: #007aff; // iOS Blue
+            font-size: 26px;
+            font-weight: 800;
+            color: #2d5af0;
             horizontal-alignment: center;
         }
 
         Text {
             text: "Running on Rust Slint Engine";
             font-size: 14px;
-            color: #8e8e93;
+            color: #666;
             horizontal-alignment: center;
         }
 
-        // Input Box
         LineEdit {
-            placeholder-text: "Ketik di sini...";
-            font-size: 16px;
-            height: 45px;
+            placeholder-text: "Cari data...";
+            height: 48px;
         }
 
-        // Card View ala Kotlin/Java
         Rectangle {
             background: white;
-            border-radius: 15px;
-            height: 120px;
-            drop-shadow-blur: 10px;
-            drop-shadow-color: #00000015;
+            border-radius: 16px;
+            height: 110px;
+            drop-shadow-blur: 15px;
+            drop-shadow-color: #00000010;
             
-            VerticalBox {
-                padding: 15px;
+            VerticalLayout {
+                padding: 18px;
+                spacing: 6px;
                 Text {
                     text: "Dashboard Status";
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #1c1c1e;
+                    font-size: 17px;
+                    font-weight: 600;
+                    color: #333;
                 }
                 Text {
                     text: "Sistem Ready - Performa Maksimal";
-                    color: #4cd964; // Hijau Sukses
+                    font-size: 13px;
+                    color: #27ae60;
                 }
             }
         }
@@ -58,7 +58,7 @@ export component AppWindow inherits Window {
         Button {
             text: "UPDATE SISTEM";
             primary: true;
-            height: 50px;
+            height: 52px;
         }
     }
 }
