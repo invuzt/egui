@@ -3,6 +3,7 @@ plugins {
 }
 
 android {
+    namespace "com.odfiz.egui"
     namespace 'com.odfiz.egui'
     compileSdk 34
 
