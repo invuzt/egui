@@ -14,6 +14,13 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Platform
+        run: |
+          sdkmanager "platforms;android-33"
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -32,12 +39,6 @@ jobs:
 
       - name: Build Rust Lib (Release)
         run: |
-          # GitHub Actions default Android SDK location
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          
-          # Install platform yang dibutuhkan Slint
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-33"
-          
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release
 
@@ -48,7 +49,6 @@ jobs:
 
       - name: Set Build Tools Path
         run: |
-          export ANDROID_HOME=/usr/local/lib/android/sdk
           BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools/ | tail -n 1)
           echo "ANDROID_BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> $GITHUB_ENV
           echo "$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION" >> $GITHUB_PATH
