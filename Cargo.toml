@@ -7,13 +7,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Kunci versi 1.9.1 agar stabil
-slint = { version = "=1.9.1", features = ["compat-1-2", "renderer-software"] }
-# Tambahkan jembatan yang hilang tadi
+# Kita nyalakan fitur backend-android di sini
+slint = { version = "1.9.1", features = ["compat-1-2", "renderer-software", "backend-android"] }
 android-activity = { version = "0.6", features = ["game-activity"] }
 
 [build-dependencies]
-slint-build = "=1.9.1"
+slint-build = "1.9.1"
 
 [profile.release]
 opt-level = "z"
