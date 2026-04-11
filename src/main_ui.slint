@@ -2,94 +2,58 @@ import { Button, LineEdit, Slider, CheckBox, VerticalBox, HorizontalBox, ScrollV
 
 export component AppWindow inherits Window {
     title: "Odfiz Native Showcase";
-    // Biarkan background putih bersih/standard sistem
     background: #FFFFFF;
     
     in-out property <string> input-text;
-    in-out property <string> password-text;
-    in-out property <float> slider-val: 50;
-    in-out property <bool> toggle-val: true;
     in-out property <string> status-text: "Sistem Ready";
     
     callback process-data(string);
+    callback open-camera();
 
     ScrollView {
         VerticalBox {
-            padding-top: 70px; // Jarak aman status bar
+            padding-top: 70px;
             spacing: 15px;
 
             Text {
-                text: "Native Theme Showcase";
+                text: "Odfiz Pro";
                 font-size: 24px;
                 font-weight: 700;
-                color: #000000;
             }
 
-            // Input Teks Biasa
-            Text { text: "Input Teks:"; font-size: 14px; color: gray; }
             LineEdit {
                 placeholder-text: "Ketik sesuatu...";
                 text <=> root.input-text;
             }
 
-            // Input Password
-            Text { text: "Input Password:"; font-size: 14px; color: gray; }
-            LineEdit {
-                placeholder-text: "Password Anda...";
-                input-type: password;
-                text <=> root.password-text;
-            }
-
-            // Slider
-            Text { text: "Slider (Volume/Kecerahan): " + round(root.slider-val); font-size: 14px; color: gray; }
-            Slider {
-                minimum: 0;
-                maximum: 100;
-                value <=> root.slider-val;
-            }
-
-            // Toggle / Checkbox
-            HorizontalBox {
-                padding: 0;
-                Text { text: "Aktifkan Fitur:"; font-size: 16px; vertical-alignment: center; }
-                CheckBox {
-                    text: root.toggle-val ? "ON" : "OFF";
-                    checked <=> root.toggle-val;
-                }
-            }
-
-            // Text View (Log Status)
-            Text { text: "Log Status:"; font-size: 14px; color: gray; }
+            // Preview Status
             Rectangle {
                 background: #F0F0F0;
-                border-radius: 4px;
-                height: 80px;
+                border-radius: 8px;
+                height: 60px;
                 Text {
                     padding: 10px;
                     text: root.status-text;
-                    font-size: 14px;
                     wrap: word-wrap;
                 }
             }
 
-            // Input File (Simulasi)
+            // Tombol Kamera
             Button {
-                text: "PILIH FILE";
-                clicked => { root.status-text = "Membuka File Picker..."; }
+                text: "BUKA KAMERA (INTENT)";
+                clicked => {
+                    root.open-camera();
+                }
             }
 
-            // Tombol Utama
             Button {
-                text: "PROSES SEMUA DATA";
+                text: "PROSES DATA";
                 primary: true;
                 height: 45px;
                 clicked => {
-                    root.process-data("Input: " + root.input-text + " | Val: " + round(root.slider-val));
+                    root.process-data(root.input-text);
                 }
             }
-            
-            // Padding bawah ekstra agar bisa di-scroll
-            Rectangle { height: 20px; }
         }
     }
 }
