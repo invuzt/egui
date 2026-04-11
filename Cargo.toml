@@ -7,9 +7,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Gunakan versi spesifik agar tidak bentrok
 slint = { version = "=1.9.1", features = ["compat-1-2", "renderer-software"] }
+# Ini jembatan yang dicari Slint tapi tidak ketemu
 i-slint-backend-android-activity = "=1.9.1"
+android-activity = { version = "0.6", features = ["game-activity"] }
 
 [build-dependencies]
 slint-build = "=1.9.1"
