@@ -1,79 +1,92 @@
 import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Data Engine";
+    title: "Odfiz Data Engine v2";
     background: #1a1a2e;
     width: 400px;
-    height: 700px;
+    height: 800px;
 
     callback process-million-data();
     callback search-data(string);
+    callback save-to-disk();
     
-    in-out property <string> status-text: "System Idle";
-    in-out property <string> engine-info: "Engine: Ready";
+    in-out property <string> status-text: "System Ready";
+    in-out property <string> preview-text: "No data loaded";
     in-out property <float> ram-percent: 0.0;
 
     ScrollView {
         VerticalBox {
             padding: 25px;
-            spacing: 20px;
+            spacing: 15px;
 
             Image {
                 source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
-                width: 80px;
-                height: 80px;
+                width: 60px;
+                height: 60px;
                 horizontal-alignment: center;
             }
 
+            // Engine Monitor
             Rectangle {
-                height: 120px;
+                height: 100px;
                 background: #0f3460;
                 border-radius: 12px;
                 VerticalBox {
                     alignment: center;
-                    Text { text: "RUST DATA ENGINE"; color: #ff9f43; font-weight: 800; horizontal-alignment: center; }
-                    Text { text: root.engine-info; color: #00d2ff; font-size: 18px; horizontal-alignment: center; }
+                    Text { text: "ODFIZ STORAGE ENGINE"; color: #ff9f43; font-weight: 800; }
                     Rectangle {
-                        height: 8px;
-                        background: #16213e;
-                        border-radius: 4px;
+                        height: 6px; background: #16213e; border-radius: 3px;
                         Rectangle {
                             x: 0; width: parent.width * root.ram-percent;
-                            background: #4cd137; border-radius: 4px;
+                            background: #4cd137; border-radius: 3px;
                         }
                     }
                 }
             }
 
-            // Input area lebih aman
-            VerticalBox {
-                spacing: 5px;
-                Text { text: "Masukkan ID Pencarian:"; color: white; font-size: 12px; }
-                input := TextInput {
-                    font-size: 18px;
-                    color: white;
-                    // Gunakan properti text langsung
+            // Preview Area (Sample Data)
+            Text { text: "Sample Preview (Top 5):"; color: #00d2ff; font-size: 12px; }
+            Rectangle {
+                background: #16213e;
+                border-radius: 8px;
+                height: 100px;
+                Text {
+                    text: root.preview-text;
+                    color: #bdc3c7;
+                    font-family: "monospace";
+                    font-size: 11px;
+                    padding: 10px;
                 }
-                Button {
-                    text: "CARI DATA";
-                    clicked => { root.search-data(input.text) }
+            }
+
+            input := TextInput {
+                font-size: 18px;
+                color: white;
+            }
+
+            HorizontalBox {
+                Button { text: "CARI"; clicked => { root.search-data(input.text) } }
+                Button { 
+                    text: "SAVE TO DISK"; 
+                    primary: true;
+                    clicked => { root.save-to-disk() } 
                 }
             }
 
             Button {
-                text: "GENERATE & PROCESS 1M DATA";
-                primary: true;
+                text: "INSERT 1.000.000 DATA";
                 height: 50px;
                 clicked => { root.process-million-data() }
             }
 
+            // Console Log
             Rectangle {
                 background: #000000;
                 border-radius: 5px;
                 height: 120px;
                 VerticalBox {
-                    padding: 10px;
-                    Text { text: root.status-text; color: #00ff00; font-family: "monospace"; font-size: 11px; wrap: word-wrap; }
+                    padding: 8px;
+                    Text { text: root.status-text; color: #00ff00; font-family: "monospace"; font-size: 10px; wrap: word-wrap; }
                 }
             }
         }
