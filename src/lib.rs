@@ -37,17 +37,28 @@ impl eframe::App for OdfizShell {
                 ui.label(RichText::new("ODFIZ CORE SYSTEM").strong().size(20.0).color(theme::COLOR_ACCENT).extra_letter_spacing(3.0));
                 ui.add_space(30.0);
 
-                // Kartu Modul Server
+                // --- KARTU MODUL ---
                 theme::odfiz_card(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("LITE SERVER").strong().size(22.0));
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.button(if self.mm.server_open { "🔼" } else { "🔽" }).clicked() {
-                                self.mm.server_open = !self.mm.server_open;
-                            }
+                    // Kita buat area header yang bisa merespon klik
+                    let (rect, response) = ui.allocate_at_least(egui::vec2(ui.available_width(), 30.0), egui::Sense::click());
+                    
+                    // Jika area header diklik (tulisan atau icon mana saja)
+                    if response.clicked() {
+                        self.mm.server_open = !self.mm.server_open;
+                    }
+
+                    // Gambar konten di dalam area rect tadi secara manual agar rapi
+                    ui.allocate_ui_at_rect(rect, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("LITE SERVER").strong().size(22.0));
+                            
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(if self.mm.server_open { "🔼" } else { "🔽" });
+                            });
                         });
                     });
 
+                    // Konten isi modul
                     if self.mm.server_open {
                         ui.add_space(20.0);
                         ui.separator();
