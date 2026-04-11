@@ -8,8 +8,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 miniquad = "0.4"
-egui = "0.27"
-egui-miniquad = "0.16" # Pakai tanda hubung (-), bukan underscore (_)
+# Paksa pakai 0.27 agar sinkron dengan egui-miniquad
+egui = "=0.27.2"
+egui-miniquad = "=0.16.0"
 
 [profile.release]
 opt-level = "z"
