@@ -2,63 +2,68 @@ import { Button, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     title: "Odfiz Modern UI";
-    background: #f4f7fa;
+    background: #F2F2F7; // iOS System Background
     default-font-family: "sans-serif";
     
+    // Properti untuk komunikasi dengan Rust
+    in-out property <string> input-text;
+    in-out property <string> status-text: "Sistem Ready - Performa Maksimal";
+    callback process-data(string);
+
     VerticalLayout {
         padding: 24px;
-        padding-top: 65px; // Turun sedikit agar tidak tertutup Status Bar
-        spacing: 22px;
+        padding-top: 70px;
+        spacing: 25px;
         alignment: start;
 
         Text {
-            text: "Odfiz Modern UI";
-            font-size: 26px;
-            font-weight: 800;
-            color: #2d5af0;
+            text: "Odfiz Core";
+            font-size: 32px;
+            font-weight: 700;
+            color: #000000;
             horizontal-alignment: center;
         }
 
-        Text {
-            text: "Running on Rust Slint Engine";
-            font-size: 14px;
-            color: #666;
-            horizontal-alignment: center;
-        }
-
+        // Input Field Style iOS
         LineEdit {
-            placeholder-text: "Cari data...";
-            height: 48px;
+            placeholder-text: "Masukkan data...";
+            height: 50px;
+            text <=> root.input-text;
         }
 
+        // Dashboard Card iOS Style
         Rectangle {
-            background: white;
-            border-radius: 16px;
-            height: 110px;
-            drop-shadow-blur: 15px;
-            drop-shadow-color: #00000010;
+            background: #FFFFFF;
+            border-radius: 14px;
+            height: 130px;
             
             VerticalLayout {
-                padding: 18px;
-                spacing: 6px;
+                padding: 20px;
+                spacing: 12px;
                 Text {
-                    text: "Dashboard Status";
-                    font-size: 17px;
+                    text: "STATUS LOG";
+                    font-size: 13px;
                     font-weight: 600;
-                    color: #333;
+                    color: #8E8E93; // iOS Secondary Label
                 }
                 Text {
-                    text: "Sistem Ready - Performa Maksimal";
-                    font-size: 13px;
-                    color: #27ae60;
+                    text: root.status-text;
+                    font-size: 17px;
+                    font-weight: 500;
+                    color: #000000;
+                    wrap: word-wrap;
                 }
             }
         }
 
+        // Button iOS Style (Blue)
         Button {
-            text: "UPDATE SISTEM";
+            text: "PROSES DATA";
             primary: true;
-            height: 52px;
+            height: 54px;
+            clicked => {
+                root.process-data(root.input-text);
+            }
         }
     }
 }
