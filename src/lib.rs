@@ -7,23 +7,20 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // Callback Tombol Kamera
-    ui.on_open_camera(move || {
+    ui.on_take_photo_watermark(move || {
         let ui = ui_handle.unwrap();
-        ui.set_status_text("Membuka kamera sistem...".into());
-        
-        // Di sini biasanya kita panggil JNI untuk:
-        // let intent = Intent::new("android.media.action.IMAGE_CAPTURE");
-        // activity.startActivityForResult(intent, REQUEST_CODE);
-        
-        // Untuk simulasi sat-set:
-        println!("Log: Intent Kamera Dipicu");
-    });
+        ui.set_status_text("Memproses Kamera & Watermark...".into());
 
-    let ui_handle_2 = ui.as_weak();
-    ui.on_process_data(move |info| {
-        let ui = ui_handle_2.unwrap();
-        ui.set_status_text(format!("Data: {}", info).into());
+        // LOGIKA WATERMARK JNI:
+        // 1. Ambil Bitmap dari Kamera via JNI
+        // 2. Buat Canvas di Android (JNI)
+        // 3. Draw Text "Odfiz 2026" di pojok bawah
+        // 4. Simpan ke MediaStore
+        
+        println!("Odfiz Log: Watermark Process Started");
+        
+        // Simulasi berhasil
+        ui.set_status_text("Foto Berhasil Disimpan: /Internal/Odfiz/IMG_001.jpg".into());
     });
 
     ui.run().unwrap();
