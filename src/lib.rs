@@ -6,24 +6,27 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
-    let app_ctx = app.clone();
 
     ui.on_take_smart_photo(move || {
         let ui = ui_handle.unwrap();
-        ui.set_status_text("Membuka Kamera...".into());
-
-        // JNI Magic untuk memicu Intent Kamera
-        if let Some(vm_ptr) = app_ctx.vm_as_ptr() {
-            unsafe {
-                let vm = jni::JavaVM::from_raw(vm_ptr as *mut jni::sys::JavaVM).unwrap();
-                let mut env = vm.attach_current_thread().unwrap();
-                let activity = jni::objects::JObject::from_raw(app_ctx.activity_as_ptr() as jni::sys::jobject);
-
-                // Di sini kita panggil fungsi Android untuk buka kamera
-                // Untuk "sat-set", kita log dulu ke console NDK
-                println!("Odfiz: Intent Camera Triggered!");
+        // Ganti fungsi jadi Kalkulasi Performa Rust
+        let start = std::time::Instant::now();
+        
+        // Simulasi beban kerja berat (hitung angka prima)
+        let mut count = 0;
+        for n in 2..50000 {
+            let mut is_prime = true;
+            for i in 2..((n as f64).sqrt() as i32 + 1) {
+                if n % i == 0 { is_prime = false; break; }
             }
+            if is_prime { count += 1; }
         }
+        
+        let duration = start.elapsed();
+        ui.set_status_text(format!(
+            "Rust Power: Berhasil hitung {} bilangan prima dalam {:?}!\nTanpa bantuan Java/JNI.", 
+            count, duration
+        ).into());
     });
 
     ui.run().unwrap();
