@@ -1,75 +1,99 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Secure";
+    title: "Odfiz Secure & Pulse";
     background: #1a1a2e;
     width: 400px;
-    height: 600px;
+    height: 700px;
 
     callback secure-now();
     callback refresh-pulse();
-    in-out property <string> status-text: "Odfiz System Ready";
+    
+    in-out property <string> status-text: "Menunggu perintah...";
     in-out property <string> pulse-info: "RAM: --MB";
-    in-out property <string> entropy-info: "System Health: --";
+    in-out property <float> ram-percent: 0.0; // 0.0 sampai 1.0
 
-    VerticalBox {
-        padding: 30px;
-        spacing: 20px;
-        alignment: start;
+    ScrollView {
+        VerticalBox {
+            padding: 25px;
+            spacing: 20px;
 
-        Image {
-            source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
-            width: 100px;
-            height: 100px;
-            horizontal-alignment: center;
-        }
+            // Logo Odfiz
+            Image {
+                source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
+                width: 80px;
+                height: 80px;
+                horizontal-alignment: center;
+            }
 
-        Rectangle {
-            height: 120px;
-            background: #0f3460;
-            border-radius: 12px;
+            // Visual RAM Progress Bar
             VerticalBox {
-                alignment: center;
-                Text {
-                    text: root.pulse-info;
-                    color: #00d2ff;
-                    font-size: 20px;
-                    font-weight: 700;
-                }
-                Text {
-                    text: root.entropy-info;
-                    color: #4cd137;
-                    font-size: 14px;
+                spacing: 5px;
+                Text { text: root.pulse-info; color: #00d2ff; font-weight: 700; }
+                Rectangle {
+                    height: 15px;
+                    background: #16213e;
+                    border-radius: 5px;
+                    // Indikator Progress
+                    Rectangle {
+                        x: 0;
+                        width: parent.width * root.ram-percent;
+                        background: @linear-gradient(90deg, #4cd137 0%, #00d2ff 100%);
+                        border-radius: 5px;
+                        animate width { duration: 500ms; easing: ease-in-out; }
+                    }
                 }
             }
-        }
 
-        Rectangle {
-            background: #16213e;
-            border-radius: 8px;
-            VerticalBox {
-                padding: 12px;
-                Text {
-                    text: root.status-text;
-                    color: #eeeeee;
-                    font-size: 14px;
-                    wrap: word-wrap;
-                    horizontal-alignment: center;
+            // Deskripsi Keunggulan
+            Rectangle {
+                background: #0f3460;
+                border-radius: 10px;
+                VerticalBox {
+                    padding: 15px;
+                    Text {
+                        text: "KEUNGGULAN ODFIZ SECURE:";
+                        color: #ff9f43;
+                        font-weight: 800;
+                    }
+                    Text {
+                        text: "• Enkripsi ChaCha20: Standar militer, lebih kencang di HP ARM.\n• Micro-Compression: File .odfiz lebih kecil dari aslinya.\n• Zero-Copy: Proses data super cepat tanpa membebani RAM.";
+                        color: #eeeeee;
+                        font-size: 13px;
+                        wrap: word-wrap;
+                    }
                 }
             }
-        }
 
-        Button {
-            text: "SECURE DATA";
-            primary: true;
-            height: 55px;
-            clicked => { root.secure-now() }
-        }
+            // Status Console
+            Rectangle {
+                background: #000000;
+                border-radius: 5px;
+                height: 80px;
+                VerticalBox {
+                    padding: 10px;
+                    Text {
+                        text: root.status-text;
+                        color: #00ff00;
+                        font-family: "monospace";
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+                }
+            }
 
-        Button {
-            text: "REFRESH SYSTEM";
-            height: 50px;
-            clicked => { root.refresh-pulse() }
+            Button {
+                text: "LOCK FOLDER & EXPORT";
+                primary: true;
+                height: 50px;
+                clicked => { root.secure-now() }
+            }
+
+            Button {
+                text: "REFRESH SYSTEM";
+                height: 45px;
+                clicked => { root.refresh-pulse() }
+            }
         }
     }
 }

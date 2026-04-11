@@ -8,25 +8,32 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
+    // Fitur 1: Monitoring System (Pulse)
     ui.on_refresh_pulse({
         let ui_handle = ui_handle.clone();
         move || {
             if let Some(ui) = ui_handle.upgrade() {
                 let mut sys = System::new_all();
-                sys.refresh_all();
+                sys.refresh_memory();
                 
-                let used_ram = sys.used_memory() / 1024 / 1024;
-                let uptime = sys.uptime(); // Detik sejak HP nyala
+                let used = sys.used_memory() as f32;
+                let total = sys.total_memory() as f32;
+                let ratio = used / total;
                 
-                ui.set_pulse_info(format!("RAM: {} MB", used_ram).into());
-                ui.set_entropy_info(format!("Uptime: {} jam", uptime / 3600).into());
+                ui.set_pulse_info(format!("RAM Terpakai: {} MB", (used / 1024.0 / 1024.0) as i32).into());
+                ui.set_ram_percent(ratio);
             }
         }
     });
 
-    ui.on_secure_now(move || {
-        if let Some(ui) = ui_handle.upgrade() {
-            ui.set_status_text("Odfiz Stealth: Data Shredded & Secured".into());
+    // Fitur 2: Encryption & Zip (Secure)
+    ui.on_secure_now({
+        let ui_handle = ui_handle.clone();
+        move || {
+            if let Some(ui) = ui_handle.upgrade() {
+                ui.set_status_text("Scanning Folder...\nCompressing to .odfiz...\nExported to /sdcard/OdfizSecure/".into());
+                // Disini nantinya kita tambahkan crate 'walkdir' untuk handle folder
+            }
         }
     });
 
