@@ -1,27 +1,33 @@
 use eframe::egui;
-use eframe::egui::{Color32, Frame, Ui, Margin, Stroke, Pos2, Vec2};
+use eframe::egui::{Color32, Visuals, Margin, Vec2, Stroke};
 
-pub const COLOR_BG: Color32 = Color32::from_rgb(10, 10, 10);
-pub const COLOR_ACCENT: Color32 = Color32::from_rgb(244, 63, 94); // Re-added
+pub fn apply_global_style(ctx: &egui::Context) {
+    let mut style = (*ctx.style()).clone();
 
-pub fn odfiz_card(ui: &mut Ui, bg_color: Color32, add_contents: impl FnOnce(&mut Ui)) {
-    Frame::none()
+    // 1. Spacing & Margin (Kunci Kerapihan)
+    style.spacing.item_spacing = Vec2::new(10.0, 15.0); // Jarak antar elemen
+    style.spacing.window_margin = Margin::same(15.0);
+    style.spacing.button_padding = Vec2::new(15.0, 10.0);
+    
+    // 2. Rounding (Semua membulat konsisten)
+    style.visuals.widgets.noninteractive.rounding = 25.0; // Rounding Kartu
+    style.visuals.widgets.inactive.rounding = 15.0;      // Rounding Tombol
+    style.visuals.widgets.hovered.rounding = 15.0;
+    style.visuals.widgets.active.rounding = 15.0;
+
+    // 3. Warna Default Text
+    style.visuals.override_text_color = Some(Color32::WHITE);
+    
+    ctx.set_style(style);
+}
+
+pub fn draw_card(ui: &mut egui::Ui, bg_color: Color32, add_contents: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::none()
         .fill(bg_color)
-        .inner_margin(Margin::same(25.0))
-        .rounding(32.0)
+        .inner_margin(Margin::same(20.0))
+        .rounding(25.0)
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
             add_contents(ui);
         });
-}
-
-pub fn draw_hud_icon(ui: &mut Ui, size: f32, color: Color32) {
-    let (rect, _) = ui.allocate_at_least(Vec2::splat(size), egui::Sense::hover());
-    let painter = ui.painter();
-    let center = rect.center();
-    let r = size / 2.0;
-    painter.circle_stroke(center, r, Stroke::new(1.0, color.gamma_multiply(0.3)));
-    painter.line_segment([Pos2::new(center.x - r, center.y), Pos2::new(center.x + r, center.y)], Stroke::new(1.0, color));
-    painter.line_segment([Pos2::new(center.x, center.y - r), Pos2::new(center.x, center.y + r)], Stroke::new(1.0, color));
-    painter.circle_filled(center, 2.0, color);
 }
