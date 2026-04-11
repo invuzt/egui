@@ -13,16 +13,20 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
         move || {
             if let Some(ui) = ui_handle.upgrade() {
                 let mut sys = System::new_all();
-                sys.refresh_memory();
+                sys.refresh_all();
+                
                 let used_ram = sys.used_memory() / 1024 / 1024;
+                let uptime = sys.uptime(); // Detik sejak HP nyala
+                
                 ui.set_pulse_info(format!("RAM: {} MB", used_ram).into());
+                ui.set_entropy_info(format!("Uptime: {} jam", uptime / 3600).into());
             }
         }
     });
 
     ui.on_secure_now(move || {
         if let Some(ui) = ui_handle.upgrade() {
-            ui.set_status_text("Odfiz Secure: Data Encrypted & Compressed".into());
+            ui.set_status_text("Odfiz Stealth: Data Shredded & Secured".into());
         }
     });
 

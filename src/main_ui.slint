@@ -10,13 +10,13 @@ export component AppWindow inherits Window {
     callback refresh-pulse();
     in-out property <string> status-text: "Odfiz System Ready";
     in-out property <string> pulse-info: "RAM: --MB";
+    in-out property <string> entropy-info: "System Health: --";
 
     VerticalBox {
         padding: 30px;
         spacing: 20px;
         alignment: start;
 
-        // Ikon Launcher sebagai Logo Utama
         Image {
             source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
             width: 100px;
@@ -24,20 +24,26 @@ export component AppWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        // Monitoring Box
         Rectangle {
-            height: 80px;
+            height: 120px;
             background: #0f3460;
             border-radius: 12px;
-            Text {
-                text: root.pulse-info;
-                color: #00d2ff;
-                font-size: 20px;
-                font-weight: 700;
+            VerticalBox {
+                alignment: center;
+                Text {
+                    text: root.pulse-info;
+                    color: #00d2ff;
+                    font-size: 20px;
+                    font-weight: 700;
+                }
+                Text {
+                    text: root.entropy-info;
+                    color: #4cd137;
+                    font-size: 14px;
+                }
             }
         }
 
-        // Status Area (Padding diperbaiki dengan membungkus Text dalam VerticalBox)
         Rectangle {
             background: #16213e;
             border-radius: 8px;
@@ -47,7 +53,7 @@ export component AppWindow inherits Window {
                     text: root.status-text;
                     color: #eeeeee;
                     font-size: 14px;
-                    wrap: word-wrap; // Fix: Gunakan word-wrap
+                    wrap: word-wrap;
                     horizontal-alignment: center;
                 }
             }
