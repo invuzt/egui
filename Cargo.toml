@@ -7,7 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Kita cukup panggil Slint, dia akan menarik android-activity yang benar secara otomatis
 slint = { version = "1.9.1", features = ["compat-1-2", "renderer-software", "backend-android-activity-06"] }
 
 [build-dependencies]
