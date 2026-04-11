@@ -1,5 +1,5 @@
 use eframe::egui;
-use eframe::egui::{Color32, Visuals, Margin, Vec2};
+use eframe::egui::{Color32, Visuals, Vec2, Rounding};
 
 pub fn apply_ios_style(ctx: &egui::Context) {
     let mut style = (*ctx.style()).clone();
@@ -11,12 +11,12 @@ pub fn apply_ios_style(ctx: &egui::Context) {
     
     // iOS Light Mode Visuals
     style.visuals = Visuals::light();
-    style.visuals.panel_fill = Color32::from_rgb(242, 242, 247); // Background iOS Gray
+    style.visuals.panel_fill = Color32::from_rgb(242, 242, 247); 
     
-    // Styling Tombol khas iOS
+    // Styling Tombol khas iOS (Fix Type Rounding)
     style.visuals.widgets.inactive.bg_fill = Color32::WHITE;
-    style.visuals.widgets.inactive.rounding = 12.0;
-    style.visuals.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(0, 122, 255)); // iOS Blue
+    style.visuals.widgets.inactive.rounding = Rounding::same(12.0);
+    style.visuals.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(0, 122, 255));
     
     style.spacing.item_spacing = Vec2::new(10.0, 15.0);
     style.spacing.button_padding = Vec2::new(20.0, 12.0);
