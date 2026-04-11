@@ -3,11 +3,10 @@ mod features;
 mod theme;
 
 use eframe::egui;
-use eframe::egui::{RichText, Frame};
+use eframe::egui::RichText;
 use features::get_all_modules;
 
 struct OdfizShell {
-    // Kita simpan status buka/tutup tiap modul di sini
     module_states: Vec<bool>,
     modules: Vec<Box<dyn features::OdfizModule>>,
 }
@@ -33,7 +32,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
             let count = all.len();
             
             Box::new(OdfizShell { 
-                module_states: vec![false; count], // Semua tertutup di awal
+                module_states: vec![false; count],
                 modules: all.into_iter().map(|(_, m)| m).collect(),
             })
         }),
@@ -56,35 +55,32 @@ impl eframe::App for OdfizShell {
 
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical_centered(|ui| {
-                    // Iterasi semua modul
                     for (i, module) in self.modules.iter_mut().enumerate() {
                         let is_open = self.module_states[i];
 
-                        theme::odfiz_card(ui, |ui| {
+                        // FIX: Explicit type &mut egui::Ui
+                        theme::odfiz_card(ui, |ui: &mut egui::Ui| {
                             ui.set_width(ui.available_width() * 0.95);
                             
-                            // Baris Judul & Tombol Toggle
-                            ui.horizontal(|ui| {
+                            ui.horizontal(|ui: &mut egui::Ui| {
                                 ui.label(RichText::new(module.name().to_uppercase())
                                     .strong()
                                     .color(if is_open { theme::COLOR_ACCENT } else { egui::Color32::WHITE }));
                                 
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui: &mut egui::Ui| {
                                     let icon = if is_open { "🔼" } else { "🔽" };
                                     if ui.button(RichText::new(icon).size(14.0)).clicked() {
-                                        self.module_states[i] = !is_open; // Toggle buka/tutup
+                                        self.module_states[i] = !is_open;
                                     }
                                 });
                             });
 
-                            // JIKA TERBUKA: Tampilkan konten di bawahnya
                             if is_open {
                                 ui.add_space(15.0);
                                 ui.separator();
                                 ui.add_space(15.0);
                                 
-                                // Bungkus konten modul biar rapi
-                                ui.vertical(|ui| {
+                                ui.vertical(|ui: &mut egui::Ui| {
                                     module.ui(ui);
                                 });
                                 
