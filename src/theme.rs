@@ -1,5 +1,5 @@
 use eframe::egui;
-use eframe::egui::{Color32, Frame, RichText, Ui, Margin};
+use eframe::egui::{Color32, Frame, Ui, Margin};
 
 pub const COLOR_BG: Color32 = Color32::from_rgb(15, 15, 15);
 pub const COLOR_CARD: Color32 = Color32::from_rgb(25, 25, 25);

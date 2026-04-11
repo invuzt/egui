@@ -18,9 +18,7 @@ impl LiteServer {
                 let (txt, color) = if self.is_running { ("ON", Color32::GREEN) } else { ("OFF", theme::COLOR_ACCENT) };
                 ui.label(RichText::new(txt).color(color).strong());
             });
-
             ui.add_space(15.0);
-
             let btn_label = if self.is_running { "STOP SERVER" } else { "RUN SERVER" };
             if ui.add(egui::Button::new(RichText::new(btn_label).size(18.0).strong())
                 .fill(theme::COLOR_ACCENT)
