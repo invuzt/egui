@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 miniquad = "0.4"
 egui = "0.27"
-egui_miniquad = "0.16"
+egui-miniquad = "0.16" # Pakai tanda hubung (-), bukan underscore (_)
 
 [profile.release]
 opt-level = "z"
