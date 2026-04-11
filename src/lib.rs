@@ -15,7 +15,6 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // PROSES JUTAAN DATA
     ui.on_process_million_data({
         let ui_handle = ui_handle.clone();
         move || {
@@ -24,7 +23,6 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
             
             unsafe {
                 DATABASE.clear();
-                // Generate 1 Juta data secara instan
                 for i in 0..1_000_000 {
                     DATABASE.push(Transaction { id: i, amount: i % 1000 });
                 }
@@ -32,17 +30,16 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
             
             let duration = start.elapsed();
             ui.set_engine_info(format!("1.000.000 Baris Ready!").into());
-            ui.set_status_text(format!("Proses Generate & Alokasi RAM selesai dalam: {:?}\nKecepatan ini mustahil di bahasa interpretasi.", duration).into());
+            ui.set_status_text(format!("Generate & Process 1 Juta data selesai dalam: {:?}\nEngine siap untuk pencarian.", duration).into());
             ui.set_ram_percent(0.8);
         }
     });
 
-    // CARI DATA INSTAN
     ui.on_search_data({
         let ui_handle = ui_handle.clone();
         move |search_id| {
             let ui = ui_handle.unwrap();
-            let id_num = search_id.parse::<u32>().unwrap_or(0);
+            let id_num = search_id.trim().parse::<u32>().unwrap_or(u32::MAX);
             let start = Instant::now();
             
             let result = unsafe {
@@ -51,8 +48,8 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
             
             let duration = start.elapsed();
             match result {
-                Some(t) => ui.set_status_text(format!("Data Ditemukan!\nID: {}\nAmount: {}\nSearch Time: {:?}", t.id, t.amount, duration).into()),
-                None => ui.set_status_text("Data tidak ditemukan dalam 1 juta baris.".into()),
+                Some(t) => ui.set_status_text(format!("DATA DITEMUKAN!\nID: {}\nAmount: {}\nSearch Time: {:?}", t.id, t.amount, duration).into()),
+                None => ui.set_status_text(format!("Data ID '{}' tidak ditemukan dalam database.", search_id).into()),
             }
         }
     });

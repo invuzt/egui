@@ -25,7 +25,6 @@ export component AppWindow inherits Window {
                 horizontal-alignment: center;
             }
 
-            // Engine Monitor
             Rectangle {
                 height: 120px;
                 background: #0f3460;
@@ -46,27 +45,19 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Deskripsi Fitur
-            Rectangle {
-                background: #16213e;
-                border-radius: 10px;
-                VerticalBox {
-                    padding: 12px;
-                    Text {
-                        text: "KEPERKASAAN RUST ENGINE:";
-                        color: #00ff00; font-weight: 800; font-size: 12px;
-                    }
-                    Text {
-                        text: "1. Raw Speed: Memproses jutaan baris data secara instan.\n2. Memory Safe: Tidak akan crash meski mengolah data besar.\n3. Efficient: Penggunaan RAM yang sangat presisi.";
-                        color: #cccccc; font-size: 11px; wrap: word-wrap;
-                    }
+            // Input area lebih aman
+            VerticalBox {
+                spacing: 5px;
+                Text { text: "Masukkan ID Pencarian:"; color: white; font-size: 12px; }
+                input := TextInput {
+                    font-size: 18px;
+                    color: white;
+                    // Gunakan properti text langsung
                 }
-            }
-
-            TextInput {
-                placeholder-text: "Cari ID Data (Contoh: 999999)";
-                font-size: 16px;
-                accepted(txt) => { root.search-data(txt) }
+                Button {
+                    text: "CARI DATA";
+                    clicked => { root.search-data(input.text) }
+                }
             }
 
             Button {
@@ -79,7 +70,7 @@ export component AppWindow inherits Window {
             Rectangle {
                 background: #000000;
                 border-radius: 5px;
-                height: 100px;
+                height: 120px;
                 VerticalBox {
                     padding: 10px;
                     Text { text: root.status-text; color: #00ff00; font-family: "monospace"; font-size: 11px; wrap: word-wrap; }
