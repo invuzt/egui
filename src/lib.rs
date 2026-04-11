@@ -7,8 +7,6 @@ use eframe::egui::{RichText, Color32};
 
 struct OdfizShell {
     mm: features::ModuleManager,
-    search_query: String,
-    show_search_menu: bool,
 }
 
 #[no_mangle]
@@ -20,18 +18,19 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     }));
 
     let _ = eframe::run_native(
-        "Odfiz Pro",
+        "Odfiz Core",
         options,
         Box::new(|cc| {
             let mut style = (*cc.egui_ctx.style()).clone();
-            style.visuals = egui::Visuals::light();
+            style.visuals = egui::Visuals::dark();
             style.visuals.panel_fill = theme::COLOR_BG;
+            
+            // Font dibuat lebih besar untuk layar HP
+            style.text_styles.insert(egui::TextStyle::Body, egui::FontId::new(20.0, egui::FontFamily::Proportional));
+            style.text_styles.insert(egui::TextStyle::Button, egui::FontId::new(20.0, egui::FontFamily::Proportional));
+            
             cc.egui_ctx.set_style(style);
-            Box::new(OdfizShell { 
-                mm: features::ModuleManager::new(), 
-                search_query: String::new(),
-                show_search_menu: false 
-            })
+            Box::new(OdfizShell { mm: features::ModuleManager::new() })
         }),
     );
 }
@@ -39,94 +38,64 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 impl eframe::App for OdfizShell {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(20.0);
+            ui.add_space(50.0);
             
-            // --- TOP BAR: HAMBURGER & NOTIF ---
-            ui.horizontal(|ui| {
-                ui.menu_button(RichText::new("☰").size(24.0).color(theme::COLOR_ACCENT), |ui| {
-                    ui.set_width(150.0);
-                    if ui.button("⚙ Settings").clicked() { ui.close_menu(); }
-                    ui.separator();
-                    if ui.button("ℹ About").clicked() { ui.close_menu(); }
-                });
-                
-                ui.add_space(5.0);
-                ui.label(RichText::new("Odfiz").size(20.0).strong());
+            ui.vertical_centered(|ui| {
+                ui.label(RichText::new("ODFIZ SYSTEM").strong().size(22.0).color(theme::COLOR_ACCENT).extra_letter_spacing(4.0));
+                ui.add_space(30.0);
 
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(RichText::new("🔔").size(20.0));
-                });
-            });
-
-            ui.add_space(25.0);
-
-            // --- SEARCH DROPDOWN ---
-            ui.vertical(|ui| {
-                let text_edit = egui::TextEdit::singleline(&mut self.search_query)
-                    .hint_text("Search services...")
-                    .margin(egui::Margin::symmetric(15.0, 12.0));
-                
-                let res = ui.add_sized([ui.available_width(), 45.0], text_edit);
-                
-                if res.has_focus() || !self.search_query.is_empty() {
-                    self.show_search_menu = true;
-                } else {
-                    self.show_search_menu = false;
-                }
-
-                if self.show_search_menu {
-                    egui::Frame::popup(ui.style()).show(ui, |ui| {
-                        ui.set_width(ui.available_width());
-                        if ui.button("Recent: Lite Server").clicked() { self.mm.server_open = true; }
-                        if ui.button("Recent: Kasir").clicked() { self.mm.kasir_open = true; }
-                    });
-                }
-            });
-
-            ui.add_space(30.0);
-
-            // --- GRID MENU (WARNA-WARNI) ---
-            ui.horizontal_wrapped(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(12.0, 12.0);
-                
-                // Server (Blue)
-                if theme::draw_grid_item(ui, "🌐", "Lite Server", Color32::from_rgb(59, 130, 246), self.mm.server_open).clicked() {
-                    self.mm.server_open = !self.mm.server_open;
-                    self.mm.kasir_open = false;
-                }
-
-                // Kasir (Green)
-                if theme::draw_grid_item(ui, "💰", "Kasir Odfiz", Color32::from_rgb(34, 197, 94), self.mm.kasir_open).clicked() {
-                    self.mm.kasir_open = !self.mm.kasir_open;
-                    self.mm.server_open = false;
-                }
-
-                // Tools (Orange)
-                theme::draw_grid_item(ui, "🛠️", "Tools", Color32::from_rgb(249, 115, 22), false);
-                
-                // Community (Purple)
-                theme::draw_grid_item(ui, "👥", "Community", Color32::from_rgb(168, 85, 247), false);
-            });
-
-            ui.add_space(25.0);
-
-            // --- AREA MODUL AKTIF ---
-            if self.mm.server_open || self.mm.kasir_open {
-                ui.separator();
-                ui.add_space(10.0);
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    egui::Frame::none()
-                        .fill(Color32::WHITE)
-                        .inner_margin(20.0)
-                        .rounding(15.0)
-                        .stroke(egui::Stroke::new(1.0, Color32::from_rgb(230, 230, 230)))
-                        .show(ui, |ui| {
-                            ui.set_width(ui.available_width());
-                            if self.mm.server_open { self.mm.server.ui(ui); }
-                            if self.mm.kasir_open { self.mm.kasir.ui(ui); }
+                    ui.vertical_centered(|ui| {
+                        
+                        // --- SERVER CARD (BIRU) ---
+                        let blue = Color32::from_rgb(59, 130, 246);
+                        theme::odfiz_card(ui, blue, |ui| {
+                            let (rect, res) = ui.allocate_at_least(egui::vec2(ui.available_width(), 40.0), egui::Sense::click());
+                            if res.clicked() { self.mm.server_open = !self.mm.server_open; }
+                            
+                            ui.allocate_ui_at_rect(rect, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new("🌐 LITE SERVER").strong().size(22.0).color(if self.mm.server_open { blue } else { Color32::WHITE }));
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.label(RichText::new(if self.mm.server_open { "展开" } else { "折叠" }).size(12.0).color(Color32::DARK_GRAY)); // Pemanis
+                                    });
+                                });
+                            });
+
+                            if self.mm.server_open {
+                                ui.add_space(20.0);
+                                ui.separator();
+                                ui.add_space(20.0);
+                                self.mm.server.ui(ui);
+                            }
                         });
+
+                        ui.add_space(25.0);
+
+                        // --- KASIR CARD (HIJAU) ---
+                        let green = Color32::from_rgb(34, 197, 94);
+                        theme::odfiz_card(ui, green, |ui| {
+                            let (rect, res) = ui.allocate_at_least(egui::vec2(ui.available_width(), 40.0), egui::Sense::click());
+                            if res.clicked() { self.mm.kasir_open = !self.mm.kasir_open; }
+
+                            ui.allocate_ui_at_rect(rect, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new("💰 KASIR ODFIZ").strong().size(22.0).color(if self.mm.kasir_open { green } else { Color32::WHITE }));
+                                });
+                            });
+
+                            if self.mm.kasir_open {
+                                ui.add_space(20.0);
+                                ui.separator();
+                                ui.add_space(20.0);
+                                self.mm.kasir.ui(ui);
+                            }
+                        });
+                        
+                        ui.add_space(60.0);
+                    });
                 });
-            }
+            });
         });
     }
 }
