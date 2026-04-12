@@ -6,6 +6,7 @@ export global OdfizTheme {
     in property <color> accent-color: #ff4d6d;
     in property <color> text-primary: #ffffff;
     in property <color> text-secondary: #888888;
+    in property <color> text-input: #e0e0e0; // Warna terang khusus buat input
     in property <color> status-green: #00ff88;
     in property <length> status-bar-margin: 35px;
 }
@@ -13,15 +14,11 @@ export global OdfizTheme {
 component OdfizButton inherits Rectangle {
     in property <string> text;
     callback clicked();
-    
-    // Perbaikan: lighter() diganti brighter()
     background: touch.pressed ? OdfizTheme.accent-color.darker(20%) : (touch.has-hover ? OdfizTheme.accent-color.brighter(10%) : OdfizTheme.accent-color);
     border-radius: 12px;
     height: 48px;
     width: 220px;
-    
     animate background { duration: 150ms; }
-
     txt := Text {
         text: root.text;
         color: white;
@@ -29,14 +26,12 @@ component OdfizButton inherits Rectangle {
         font-size: 14px;
         letter-spacing: 1px;
     }
-
     touch := TouchArea { clicked => { root.clicked() } }
 }
 
 export component AppWindow inherits Window {
     title: "Odfiz Core Engine";
     background: OdfizTheme.bg-color;
-    
     in-out property <string> status-text: "SYSTEM ONLINE";
     callback process-data(string);
 
@@ -45,7 +40,7 @@ export component AppWindow inherits Window {
         padding-right: 20px;
         spacing: 0;
 
-        // --- HEADER (RATA TENGAH) ---
+        // HEADER
         VerticalBox {
             padding-top: OdfizTheme.status-bar-margin;
             padding-bottom: 10px;
@@ -73,6 +68,7 @@ export component AppWindow inherits Window {
                         padding: 25px;
                         spacing: 18px;
                         
+                        // --- FOKUS PERBAIKAN 1: STATUS TEXT WRAPPING ---
                         VerticalBox {
                             spacing: 4px;
                             padding: 0;
@@ -82,6 +78,8 @@ export component AppWindow inherits Window {
                                 font-weight: 800; 
                                 color: OdfizTheme.status-green; 
                                 horizontal-alignment: left;
+                                // === TAMBAHKAN INI ===
+                                wrap: word-wrap; // Teks bakal turun jika terlalu panjang
                             }
                             Text { 
                                 text: "CORE ENGINE INTERFACE"; 
@@ -99,11 +97,14 @@ export component AppWindow inherits Window {
                                 background: #252525;
                                 border-radius: 8px;
                                 height: 50px;
+                                // --- FOKUS PERBAIKAN 2: INPUT TEXT COLOR ---
                                 input_field := LineEdit {
                                     placeholder-text: "Type here...";
                                     font-size: 15px;
                                     width: 100%;
                                     height: 100%;
+                                    // === TAMBAHKAN INI ===
+                                    color: OdfizTheme.text-input; // Warna teks input jadi terang
                                 }
                             }
                         }
