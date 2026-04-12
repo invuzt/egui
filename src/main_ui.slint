@@ -1,36 +1,35 @@
 import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
-    in property <color> bg-color: #0c0c0c;
-    in property <color> card-bg: #1a1a1a;
-    in property <color> accent-color: #ff4d6d;
-    in property <color> text-primary: #ffffff;
-    in property <color> text-secondary: #888888;
-    in property <color> text-input: #ffffff; // Putih bersih buat ngetik
-    in property <color> status-green: #00ff88;
+    in property <color> bg-color: #F0F2F5;       // Abu-abu sangat muda (bersih)
+    in property <color> card-bg: #ffffff;       // Putih bersih
+    in property <color> accent-color: #ff4d6d;  // Tetap pakai pink-merah Odfiz biar kontras
+    in property <color> text-primary: #1c1e21;  // Hitam pekat buat teks
+    in property <color> text-secondary: #606770;
+    in property <color> status-green: #28a745;   // Hijau yang lebih "ramah" mata
     in property <length> status-bar-margin: 35px;
 }
 
 component OdfizButton inherits Rectangle {
     in property <string> text;
     callback clicked();
-    background: touch.pressed ? OdfizTheme.accent-color.darker(20%) : (touch.has-hover ? OdfizTheme.accent-color.brighter(10%) : OdfizTheme.accent-color);
-    border-radius: 12px;
-    height: 48px;
-    width: 220px;
+    background: touch.pressed ? OdfizTheme.accent-color.darker(10%) : OdfizTheme.accent-color;
+    border-radius: 25px; // Kita buat lebih bulat biar modern (Capsule)
+    height: 45px;
+    width: 200px;
     animate background { duration: 150ms; }
+    
     txt := Text {
         text: root.text;
         color: white;
         font-weight: 800;
         font-size: 14px;
-        letter-spacing: 1px;
     }
     touch := TouchArea { clicked => { root.clicked() } }
 }
 
 export component AppWindow inherits Window {
-    title: "Odfiz Core Engine";
+    title: "Odfiz Core Light";
     background: OdfizTheme.bg-color;
     in-out property <string> status-text: "SYSTEM ONLINE";
     callback process-data(string);
@@ -40,82 +39,70 @@ export component AppWindow inherits Window {
         padding-right: 20px;
         spacing: 0;
 
+        // HEADER
         VerticalBox {
             padding-top: OdfizTheme.status-bar-margin;
-            padding-bottom: 10px;
+            padding-bottom: 20px;
             alignment: center;
             Text {
                 text: "ODFIZ CORE";
-                font-size: 26px;
+                font-size: 24px;
                 font-weight: 900;
                 color: OdfizTheme.accent-color;
-                letter-spacing: 3px;
-                horizontal-alignment: center;
+                letter-spacing: 2px;
             }
         }
 
         ScrollView {
             VerticalBox {
                 spacing: 20px;
-                padding-bottom: 20px;
-
+                
+                // CARD UTAMA
                 Rectangle {
                     background: OdfizTheme.card-bg;
-                    border-radius: 16px;
-                    
+                    border-radius: 20px;
+                    drop-shadow-blur: 10px;
+                    drop-shadow-color: #00000015; // Shadow tipis biar elegan
+
                     VerticalBox {
                         padding: 25px;
-                        spacing: 18px;
+                        spacing: 20px;
                         
+                        // Status & Label
                         VerticalBox {
-                            spacing: 4px;
-                            padding: 0;
+                            spacing: 5px;
                             Text { 
                                 text: root.status-text; 
                                 font-size: 12px; 
                                 font-weight: 800; 
                                 color: OdfizTheme.status-green; 
-                                horizontal-alignment: left;
-                                wrap: word-wrap; 
+                                wrap: word-wrap;
                             }
                             Text { 
-                                text: "CORE ENGINE INTERFACE"; 
-                                font-size: 16px; 
+                                text: "Core Processor Engine"; 
+                                font-size: 18px; 
                                 font-weight: 700; 
                                 color: OdfizTheme.text-primary; 
                             }
                         }
 
+                        // INPUT AREA
                         VerticalBox {
                             spacing: 8px;
-                            padding: 0;
-                            Text { text: "ENTER DATA"; font-size: 11px; color: OdfizTheme.text-secondary; font-weight: 700; }
+                            Text { text: "INPUT DATA"; font-size: 11px; color: OdfizTheme.text-secondary; font-weight: 700; }
                             
-                            // PERBAIKAN: Bungkus LineEdit dalam Rectangle yang mengatur warna teks global
-                            Rectangle {
-                                background: #252525;
-                                border-radius: 8px;
-                                height: 50px;
-                                
-                                input_field := LineEdit {
-                                    placeholder-text: "Type here...";
-                                    font-size: 15px;
-                                    width: 100%;
-                                    height: 100%;
-                                    // Ternyata di Slint standard widget, kita pakai property 'text-color' bukan 'color'
-                                    // Tapi tidak semua versi mendukung, jadi kita pake cara aman:
-                                }
-                                
-                                // Jika 'text-color' di LineEdit tetap error, kita akan ganti widget.
-                                // Untuk sekarang, kita coba standard Slint property:
-                                @children
+                            // Di Light Mode, LineEdit standar sudah otomatis bagus kontrasnya
+                            input_field := LineEdit {
+                                placeholder-text: "Type something here...";
+                                font-size: 16px;
+                                height: 45px;
                             }
                         }
 
                         HorizontalBox {
                             alignment: center;
                             OdfizButton {
-                                text: "EXECUTE PROCESS";
+                                text: "RUN PROCESS";
                                 clicked => { root.process-data(input_field.text) }
                             }
                         }
@@ -123,9 +110,9 @@ export component AppWindow inherits Window {
                 }
 
                 Text {
-                    text: "V.4.7 NATIVE ENGINE";
-                    font-size: 10px;
-                    color: #444;
+                    text: "V.4.7 LIGHT VERSION";
+                    font-size: 11px;
+                    color: OdfizTheme.text-secondary;
                     horizontal-alignment: center;
                 }
             }
