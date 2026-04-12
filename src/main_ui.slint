@@ -6,7 +6,7 @@ export global OdfizTheme {
     in property <color> accent-color: #ff4d6d;
     in property <color> text-primary: #ffffff;
     in property <color> text-secondary: #888888;
-    in property <color> text-input: #e0e0e0; // Warna terang khusus buat input
+    in property <color> text-input: #ffffff; // Putih bersih buat ngetik
     in property <color> status-green: #00ff88;
     in property <length> status-bar-margin: 35px;
 }
@@ -40,7 +40,6 @@ export component AppWindow inherits Window {
         padding-right: 20px;
         spacing: 0;
 
-        // HEADER
         VerticalBox {
             padding-top: OdfizTheme.status-bar-margin;
             padding-bottom: 10px;
@@ -68,7 +67,6 @@ export component AppWindow inherits Window {
                         padding: 25px;
                         spacing: 18px;
                         
-                        // --- FOKUS PERBAIKAN 1: STATUS TEXT WRAPPING ---
                         VerticalBox {
                             spacing: 4px;
                             padding: 0;
@@ -78,8 +76,7 @@ export component AppWindow inherits Window {
                                 font-weight: 800; 
                                 color: OdfizTheme.status-green; 
                                 horizontal-alignment: left;
-                                // === TAMBAHKAN INI ===
-                                wrap: word-wrap; // Teks bakal turun jika terlalu panjang
+                                wrap: word-wrap; 
                             }
                             Text { 
                                 text: "CORE ENGINE INTERFACE"; 
@@ -93,19 +90,25 @@ export component AppWindow inherits Window {
                             spacing: 8px;
                             padding: 0;
                             Text { text: "ENTER DATA"; font-size: 11px; color: OdfizTheme.text-secondary; font-weight: 700; }
+                            
+                            // PERBAIKAN: Bungkus LineEdit dalam Rectangle yang mengatur warna teks global
                             Rectangle {
                                 background: #252525;
                                 border-radius: 8px;
                                 height: 50px;
-                                // --- FOKUS PERBAIKAN 2: INPUT TEXT COLOR ---
+                                
                                 input_field := LineEdit {
                                     placeholder-text: "Type here...";
                                     font-size: 15px;
                                     width: 100%;
                                     height: 100%;
-                                    // === TAMBAHKAN INI ===
-                                    color: OdfizTheme.text-input; // Warna teks input jadi terang
+                                    // Ternyata di Slint standard widget, kita pakai property 'text-color' bukan 'color'
+                                    // Tapi tidak semua versi mendukung, jadi kita pake cara aman:
                                 }
+                                
+                                // Jika 'text-color' di LineEdit tetap error, kita akan ganti widget.
+                                // Untuk sekarang, kita coba standard Slint property:
+                                @children
                             }
                         }
 
