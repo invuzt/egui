@@ -6,10 +6,9 @@ export component AppWindow inherits Window {
     preferred-width: 400px;
     preferred-height: 850px;
 
-    in-out property <string> log-text: "[SYS] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
+    in-out property <string> log-text: "[SYS] Initializing...\n[INFO] Odfiz Pool V4.2 Connected";
     in-out property <string> balance: "0.00001245";
-    in-out property <string> admin-msg: "";
-    in-out property <float> progress: 0.4;
+    in-out property <float> progress: 0.0;
     in-out property <bool> is-mining: true;
 
     callback toggle-mining();
@@ -18,70 +17,85 @@ export component AppWindow inherits Window {
         padding-top: 60px;
         padding-left: 20px;
         padding-right: 20px;
-        spacing: 15px;
+        spacing: 20px;
 
         Text {
             text: "Apk Penghasil Uang VROH";
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
             color: #ffffff;
             horizontal-alignment: center;
         }
 
-        if (admin-msg != "") : Rectangle {
-            height: 50px;
-            background: #ff4757;
-            border-radius: 8px;
-            Text { text: "⚠️ ADMIN: " + root.admin-msg; color: white; font-weight: 900; horizontal-alignment: center; vertical-alignment: center; }
-        }
-
+        // STATS CARD UTAMA
         Rectangle {
-            height: 140px;
+            height: 160px;
             background: #16213e;
-            border-radius: 12px;
-            border-width: 1px;
+            border-radius: 16px;
+            border-width: 2px;
             border-color: #39ff14;
 
             VerticalBox {
                 alignment: center;
-                Text { text: "MINING PROFITABILITY"; color: #bbbbbb; font-size: 14px; }
-                Text { text: root.balance + " BTC"; color: #39ff14; font-size: 36px; font-weight: 800; }
-                Text { text: "LIVE UPDATE | TESTNET"; color: #555555; font-size: 11px; }
+                Text { text: "CURRENT BALANCE"; color: #aaaaaa; font-size: 14px; }
+                Text { 
+                    text: root.balance + " BTC"; 
+                    color: #39ff14; 
+                    font-size: 38px; 
+                    font-weight: 900; 
+                }
+                Text { text: "HASHRATE: 62.40 TH/s | STABLE"; color: #00d2ff; font-size: 12px; }
             }
         }
 
+        // LOG MONITOR
         Rectangle {
-            background: #000;
-            border-radius: 8px;
-            height: 250px;
+            background: #000000;
+            border-radius: 10px;
+            height: 220px;
+            border-width: 1px;
+            border-color: #333;
+            
             ScrollView {
-                // Warning fixed: padding ditaruh di layout element
                 VerticalBox {
-                    padding: 10px;
-                    Text { text: root.log-text; color: #00ff00; font-family: "monospace"; font-size: 12px; wrap: word-wrap; }
+                    padding: 12px;
+                    Text { 
+                        text: root.log-text; 
+                        color: #00ff00; 
+                        font-family: "monospace"; 
+                        font-size: 13px; 
+                        wrap: word-wrap; 
+                    }
                 }
             }
         }
 
+        // PROGRESS
         VerticalBox {
-            spacing: 5px;
-            Text { text: "BLOCK DISCOVERY PROGRESS"; color: #888; font-size: 11px; }
+            spacing: 8px;
+            Text { text: "SOLVING BLOCK..."; color: #666; font-size: 12px; }
             Rectangle {
-                height: 12px; background: #222; border-radius: 6px;
+                height: 14px; background: #222; border-radius: 7px;
                 Rectangle {
                     x: 0; width: parent.width * root.progress;
-                    background: #39ff14; border-radius: 6px;
+                    background: #39ff14; border-radius: 7px;
+                    animate width { duration: 100ms; }
                 }
             }
         }
 
         Button {
-            text: root.is-mining ? "STOP MINER" : "START MINING ENGINE";
+            text: root.is-mining ? "STOP ENGINE" : "START MINING";
             primary: true;
-            height: 55px;
+            height: 60px;
             clicked => { root.toggle-mining() }
         }
 
-        Text { text: "ODFIZ CORE v4.2 - @VROH"; color: #444; font-size: 11px; horizontal-alignment: center; }
+        Text { 
+            text: "ODFIZ VROH CORE v4.2 - PONOROGO ENGINE"; 
+            color: #444; 
+            font-size: 11px; 
+            horizontal-alignment: center; 
+        }
     }
 }
