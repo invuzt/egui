@@ -9,13 +9,17 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     ui.on_process_data(move |input| {
         if let Some(ui) = ui_handle.upgrade() {
             let data = input.to_string();
-            if data.is_empty() {
-                ui.set_result_data("Input masih kosong, Mas!".into());
+            // Proses sederhana di Rust
+            let processed = if data.is_empty() {
+                "Input kosong, VROH!".to_string()
             } else {
-                // Proses data di Rust
-                let processed = format!("✓ DATA DIPROSES:\n{}", data.to_uppercase());
-                ui.set_result_data(processed.into());
-            }
+                format!("SUCCESS:\n{}", data.to_uppercase())
+            };
+            
+            // Kita belum hubungkan text hasil di UI Slint, 
+            // nanti Mas bisa tambahkan property di Slint buat nerima ini.
+            // Untuk sekarang, kita cuma tes logic build saja.
+            println!("Processed in Rust: {}", processed); 
         }
     });
 
