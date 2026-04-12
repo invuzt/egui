@@ -10,12 +10,14 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
         if let Some(ui) = ui_handle.upgrade() {
             let data = input.to_string();
             let processed = if data.is_empty() {
-                "Input kosong, VROH!".to_string()
+                "INPUT EMPTY, VROH!".to_string()
             } else {
-                format!("SUCCESS:\n{}", data.to_uppercase())
+                format!("SUCCESS: {}", data.to_uppercase())
             };
-            // Update hasil ke layar
-            ui.set_result_display(processed.into());
+            
+            // PERBAIKAN: Ganti set_result_display menjadi set_status_text
+            // Sesuai dengan nama property di main_ui.slint
+            ui.set_status_text(processed.into());
         }
     });
 
