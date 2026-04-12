@@ -3,137 +3,177 @@ import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-wi
 export global OdfizTheme {
     in property <color> bg-color: #F8F9FA;
     in property <color> card-bg: #EEF1F6;
-    in property <color> text-primary: #202124;
-    in property <color> text-secondary: #5f6368;
     in property <color> accent-color: #005FB8;
-    in property <color> text-on-accent: #ffffff;
-    
-    in property <length> font-size-h1: 28px;
-    in property <length> font-size-h2: 18px;
-    in property <length> font-size-body: 14px;
-    
-    in property <length> card-radius: 24px;
-    in property <length> button-radius: 20px;
-    in property <length> status-bar-margin: 35px; 
+    in property <color> text-primary: #202124;
+    in property <length> status-bar-margin: 35px;
 }
 
+// Komponen Tombol Kapsul
 component OdfizButton inherits Rectangle {
     in property <string> text;
-    in property <bool> has-icon: false;
     callback clicked();
-
     background: OdfizTheme.accent-color;
-    border-radius: OdfizTheme.button-radius;
-    height: 40px;
-    width: txt.preferred-width + (has-icon ? 50px : 40px);
+    border-radius: 22.5px; // Setengah dari tinggi biar bulat sempurna
+    height: 45px;
+    width: txt.preferred-width + 40px;
 
     txt := Text {
         text: root.text;
-        color: OdfizTheme.text-on-accent;
-        font-size: OdfizTheme.font-size-body;
+        color: white;
         font-weight: 700;
     }
 
-    TouchArea {
-        clicked => { root.clicked() }
-    }
+    TouchArea { clicked => { root.clicked() } }
 }
 
 export component AppWindow inherits Window {
     title: "Odfiz Processor";
     background: OdfizTheme.bg-color;
-    default-font-family: "sans-serif";
     
-    in-out property <string> result-display: "Ready to process...";
+    // State untuk memunculkan Window/Overlay
+    property <bool> show-settings: false;
+    property <bool> show-menu: false;
+    
+    in-out property <string> result-display: "Ready...";
     callback process-data(string);
 
-    VerticalBox {
-        padding-left: 16px;
-        padding-right: 16px;
-        
-        // Header
-        Rectangle {
-            height: 60px + OdfizTheme.status-bar-margin;
-            padding-top: OdfizTheme.status-bar-margin;
-            
-            Text {
-                text: "Odfiz Processor";
-                font-size: OdfizTheme.font-size-h1;
-                color: OdfizTheme.text-primary;
-                font-weight: 700;
-                x: 0;
+    // Gunakan Z-Stack (otomatis elemen yang di bawah kodenya tampil di depan)
+    Rectangle {
+        VerticalBox {
+            padding-left: 16px;
+            padding-right: 16px;
+            spacing: 0;
+
+            // --- HEADER ---
+            Rectangle {
+                height: 60px + OdfizTheme.status-bar-margin;
+                padding-top: OdfizTheme.status-bar-margin;
+                
+                HorizontalBox {
+                    alignment: space-between;
+                    Text {
+                        text: "Odfiz Processor";
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: OdfizTheme.text-primary;
+                    }
+                    HorizontalBox {
+                        spacing: 15px;
+                        // Klik Gerigi -> Muncul Setting
+                        Text { 
+                            text: "⚙"; font-size: 24px; color: OdfizTheme.text-primary; 
+                            TouchArea { clicked => { root.show-settings = true } }
+                        }
+                        // Klik Menu -> Muncul Menu Lain
+                        Text { 
+                            text: "⋮"; font-size: 24px; color: OdfizTheme.text-primary; 
+                            TouchArea { clicked => { root.show-menu = true } }
+                        }
+                    }
+                }
+            }
+
+            ScrollView {
+                VerticalBox {
+                    spacing: 15px;
+                    padding-bottom: 20px;
+
+                    Rectangle {
+                        background: OdfizTheme.card-bg;
+                        border-radius: 24px;
+                        padding: 20px;
+                        VerticalBox {
+                            spacing: 15px;
+                            Text { text: "🤖 Rust Engine Core"; font-size: 18px; font-weight: 600; }
+                            
+                            // --- INPUT TEXT (CAPSULE SHAPE) ---
+                            // Kita bungkus LineEdit dalam Rectangle biar bisa dibulatin ekstrim
+                            Rectangle {
+                                background: white;
+                                border-radius: 22.5px; // Sama dengan tombol
+                                border-width: 1px;
+                                border-color: #dadce0;
+                                height: 45px;
+                                input_field := LineEdit {
+                                    placeholder-text: "Ketik di sini...";
+                                    font-size: 16px;
+                                    width: 100%;
+                                    height: 100%;
+                                    // Hilangkan background bawaan biar pakai background Rectangle
+                                }
+                            }
+
+                            HorizontalBox {
+                                alignment: start;
+                                OdfizButton {
+                                    text: "▶ PROSES SEKARANG";
+                                    clicked => { root.process-data(input_field.text) }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        background: OdfizTheme.card-bg;
+                        border-radius: 24px;
+                        padding: 20px;
+                        VerticalBox {
+                            spacing: 10px;
+                            Text { text: "Output Log"; font-weight: 600; }
+                            Rectangle {
+                                background: white;
+                                border-radius: 12px;
+                                height: 120px;
+                                padding: 15px;
+                                Text { text: root.result-display; color: #333333; wrap: word-wrap; }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        ScrollView {
-            VerticalBox {
-                spacing: 12px;
-                padding-bottom: 20px;
-
-                // CARD INPUT
-                Rectangle {
-                    background: OdfizTheme.card-bg;
-                    border-radius: OdfizTheme.card-radius;
+        // --- OVERLAY SETTINGS (Akan muncul jika show-settings = true) ---
+        if (root.show-settings) : Rectangle {
+            background: #00000088; // Transparan gelap
+            TouchArea { clicked => { root.show-settings = false } } // Klik luar buat nutup
+            
+            Rectangle {
+                width: 80%;
+                height: 40%;
+                background: white;
+                border-radius: 24px;
+                VerticalBox {
                     padding: 20px;
-
-                    VerticalBox {
-                        spacing: 12px;
-                        Text {
-                            text: "Start Data Processing";
-                            font-size: OdfizTheme.font-size-h2;
-                            color: OdfizTheme.text-primary;
-                        }
-                        
-                        // Cara penulisan ID yang benar (id := Element)
-                        input_field := LineEdit {
-                            placeholder-text: "Ketik data di sini...";
-                            height: 45px;
-                        }
-
-                        HorizontalBox {
-                            alignment: start;
-                            OdfizButton {
-                                text: "PROSES DATA";
-                                clicked => { root.process-data(input_field.text) }
-                            }
-                        }
-                    }
+                    alignment: start;
+                    Text { text: "Settings"; font-size: 20px; font-weight: 700; color: black; }
+                    Rectangle { height: 20px; }
+                    Text { text: "• Theme: Light (Fixed)"; color: #555; }
+                    Text { text: "• Engine: Rust 1.80"; color: #555; }
+                    Text { text: "• Build: Moto G45 Optimized"; color: #555; }
+                    Rectangle { height: 10px; }
+                    Button { text: "CLOSE"; clicked => { root.show-settings = false } }
                 }
+            }
+        }
 
-                // CARD HASIL
-                Rectangle {
-                    background: OdfizTheme.card-bg;
-                    border-radius: OdfizTheme.card-radius;
-                    padding: 20px;
-
-                    VerticalBox {
-                        spacing: 8px;
-                        Text {
-                            text: "Hasil Pemrosesan";
-                            font-size: OdfizTheme.font-size-h2;
-                            color: OdfizTheme.text-primary;
-                        }
-                        
-                        Rectangle {
-                            background: #ffffff;
-                            border-radius: 12px;
-                            height: 100px;
-                            padding: 15px;
-                            Text {
-                                text: root.result-display;
-                                color: #333333;
-                                font-size: 16px;
-                                wrap: word-wrap;
-                            }
-                        }
-                    }
-                }
-                
-                Text {
-                    text: "ODFIZ VROH v4.6 - MATERIAL ENGINE";
-                    color: #bdbdbd;
-                    font-size: 10px;
-                    horizontal-alignment: center;
+        // --- OVERLAY MENU (Akan muncul jika show-menu = true) ---
+        if (root.show-menu) : Rectangle {
+            background: #00000088;
+            TouchArea { clicked => { root.show-menu = false } }
+            
+            Rectangle {
+                width: 60%;
+                height: 30%;
+                x: 35%; // Geser ke kanan biar pas di bawah ikon menu
+                y: 10%;
+                background: white;
+                border-radius: 16px;
+                VerticalBox {
+                    padding: 10px;
+                    Text { text: "Option 1"; padding: 10px; color: black; }
+                    Text { text: "Option 2"; padding: 10px; color: black; }
+                    Text { text: "About Odfiz"; padding: 10px; color: black; }
                 }
             }
         }
