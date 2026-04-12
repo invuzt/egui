@@ -1,85 +1,58 @@
-import { Button, CheckBox, ComboBox, Slider, LineEdit, StandardListView, TabWidget, GroupBox, VerticalBox, ScrollView, ProgressIndicator } from "std-widgets.slint";
+import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, GroupBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     title: "Odfiz Cupertino Gallery";
     preferred-width: 400px;
     preferred-height: 800px;
-    background: #f2f2f7; // Warna abu-abu muda iOS
+    background: #f2f2f7; 
 
     ScrollView {
         VerticalBox {
-            // Padding top ditambahkan 50px agar aman dari Status Bar Android
-            padding-top: 50px; 
+            padding-top: 60px;
             padding-left: 20px;
             padding-right: 20px;
-            padding-bottom: 30px;
             spacing: 20px;
 
             Text {
-                text: "Widget Gallery";
+                text: "Cupertino Style";
                 font-size: 32px;
                 font-weight: 800;
                 color: #000000;
             }
 
-            // Group: Controls dengan gaya kartu (Card Style)
-            Rectangle {
-                background: #ffffff;
-                border-radius: 12px;
+            GroupBox {
+                title: "Action Buttons";
                 VerticalBox {
-                    padding: 15px;
-                    spacing: 12px;
-                    Text { text: "CONTROLS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
-                    
-                    CheckBox { text: "Widgets enabled"; checked: true; }
-                    
-                    HorizontalBox {
-                        alignment: start;
-                        Text { text: "Dark Mode"; vertical-alignment: center; }
-                        // Simulasi Switch (karena Switch kadang beda tiap backend)
-                        CheckBox { text: ""; } 
-                    }
+                    spacing: 10px;
+                    Button { text: "Cupertino Button"; primary: true; }
+                    Button { text: "Secondary Action"; }
                 }
             }
 
-            // Group: Buttons
-            Rectangle {
-                background: #ffffff;
-                border-radius: 12px;
+            GroupBox {
+                title: "Selection Controls";
                 VerticalBox {
-                    padding: 15px;
-                    spacing: 12px;
-                    Text { text: "BUTTONS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
-                    
-                    Button { 
-                        text: "Regular Button"; 
-                    }
-                    Button { 
-                        text: "Primary Button"; 
-                        primary: true;
-                    }
-                }
-            }
-
-            // Group: Pickers & Sliders
-            Rectangle {
-                background: #ffffff;
-                border-radius: 12px;
-                VerticalBox {
-                    padding: 15px;
                     spacing: 15px;
-                    Text { text: "INDICATORS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
-                    
-                    LineEdit { placeholder-text: "Enter some text..."; }
-                    
-                    Slider { value: 60; }
-                    
-                    ProgressIndicator { progress: 60%; }
+                    HorizontalBox {
+                        padding: 0;
+                        alignment: start;
+                        CheckBox { text: "Enable Feature"; checked: true; }
+                    }
+                    Slider { value: 50; }
+                    ComboBox {
+                        model: ["Item 1", "Item 2", "Item 3"];
+                        current-value: "Item 1";
+                    }
                 }
             }
 
-            // Spacer bawah agar nyaman di-scroll
-            Rectangle { height: 60px; }
+            GroupBox {
+                title: "Text Entry";
+                LineEdit { placeholder-text: "iOS style input..."; }
+            }
+            
+            // Spacer agar tidak mentok bawah
+            Rectangle { height: 50px; }
         }
     }
 }
