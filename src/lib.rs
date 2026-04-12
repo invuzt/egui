@@ -1,6 +1,6 @@
 slint::include_modules!();
 use std::time::Duration;
-use slint::Timer;
+use slint::{Timer, TimerMode, SharedString}; // Ditambah TimerMode
 
 #[no_mangle]
 pub extern "C" fn android_main(app: slint::android::AndroidApp) {
@@ -8,7 +8,7 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // 1. Timer untuk Simulasi Saldo & Log
+    // 1. Timer Simulasi Saldo
     let timer = Timer::default();
     timer.start(TimerMode::Repeated, Duration::from_secs(1), {
         let ui_handle = ui_handle.clone();
@@ -22,21 +22,21 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
         }
     });
 
-    // 2. Timer untuk Cek Pesan Admin dari Internet (GitHub)
+    // 2. Timer Admin Message (Fix Type Inference)
     let admin_timer = Timer::default();
     admin_timer.start(TimerMode::Repeated, Duration::from_secs(30), {
         let ui_handle = ui_handle.clone();
         move || {
             let ui_handle = ui_handle.clone();
-            // Jalankan request di thread terpisah agar UI tidak freeze
             std::thread::spawn(move || {
-                // GANTI URL INI dengan link Raw GitHub Mas nanti
                 let url = "https://raw.githubusercontent.com/username/repo/main/pesan.txt";
                 if let Ok(response) = reqwest::blocking::get(url) {
-                    if let Ok(text) = response.text() {
+                    // Paksa tipe data ke String
+                    if let Ok(text_content) = response.text() {
+                        let final_msg = text_content.trim().to_string();
                         let _ = slint::invoke_from_event_loop(move || {
                             if let Some(ui) = ui_handle.upgrade() {
-                                ui.set_admin_msg(text.trim().into());
+                                ui.set_admin_msg(SharedString::from(final_msg));
                             }
                         });
                     }

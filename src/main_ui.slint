@@ -8,8 +8,7 @@ export component AppWindow inherits Window {
 
     in-out property <string> log-text: "[SYS] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
     in-out property <string> balance: "0.00001245";
-    in-out property <string> running-stats: "HASHRATE: 45.12 TH/s | DIFFICULTY: 82.5T | REWARD: 3.125 BTC";
-    in-out property <string> admin-msg: ""; // Pesan dari Mas
+    in-out property <string> admin-msg: "";
     in-out property <float> progress: 0.4;
     in-out property <bool> is-mining: true;
 
@@ -29,18 +28,13 @@ export component AppWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        // --- ADMIN NOTIFICATION BOX ---
         if (admin-msg != "") : Rectangle {
             height: 50px;
             background: #ff4757;
             border-radius: 8px;
-            HorizontalBox {
-                alignment: center;
-                Text { text: "⚠️ ADMIN: " + root.admin-msg; color: white; font-weight: 900; }
-            }
+            Text { text: "⚠️ ADMIN: " + root.admin-msg; color: white; font-weight: 900; horizontal-alignment: center; vertical-alignment: center; }
         }
 
-        // --- STATS CARD ---
         Rectangle {
             height: 140px;
             background: #16213e;
@@ -50,21 +44,22 @@ export component AppWindow inherits Window {
 
             VerticalBox {
                 alignment: center;
-                padding: 15px;
                 Text { text: "MINING PROFITABILITY"; color: #bbbbbb; font-size: 14px; }
                 Text { text: root.balance + " BTC"; color: #39ff14; font-size: 36px; font-weight: 800; }
-                Text { text: "LIVE UPDATE | TESTNET"; color: #555555; font-size: 11px; } // SUDAH FIX (;)
+                Text { text: "LIVE UPDATE | TESTNET"; color: #555555; font-size: 11px; }
             }
         }
 
-        // --- LOG VIEW ---
         Rectangle {
             background: #000;
             border-radius: 8px;
             height: 250px;
             ScrollView {
-                padding: 10px;
-                Text { text: root.log-text; color: #00ff00; font-family: "monospace"; font-size: 12px; wrap: word-wrap; }
+                // Warning fixed: padding ditaruh di layout element
+                VerticalBox {
+                    padding: 10px;
+                    Text { text: root.log-text; color: #00ff00; font-family: "monospace"; font-size: 12px; wrap: word-wrap; }
+                }
             }
         }
 
