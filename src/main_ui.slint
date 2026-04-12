@@ -1,81 +1,53 @@
 import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Data Processor";
-    background: #121212; // Material Dark
-    preferred-width: 360px;
-    preferred-height: 640px;
-    default-font-family: "sans-serif"; // Pakai font Android
+    title: "Odfiz Native Processor";
+    in-out property <bool> is-dark-mode: true;
+    background: is-dark-mode ? #121212 : #f5f5f5;
+    default-font-family: "sans-serif";
 
     in-out property <string> input-data: "";
-    in-out property <string> result-data: "Menunggu input...";
+    in-out property <string> result-data: "Ready...";
 
     callback process-data(string);
 
     VerticalBox {
         padding: 30px;
         spacing: 20px;
-        alignment: start;
-
+        
         Text {
             text: "Odfiz Processor";
-            color: #ffffff;
+            color: root.is-dark-mode ? #ffffff : #000000;
             font-size: 24px;
             font-weight: 700;
-            horizontal-alignment: center;
-        }
-
-        Text {
-            text: "Masukkan data untuk diproses di Rust:";
-            color: #aaaaaa;
-            font-size: 24px;
         }
 
         LineEdit {
-            placeholder-text: "Ketik sesuatu di sini...";
-            font-size: 24px;
-            height: 45px;
-            edited(text) => {
-                root.input-data = text;
-            }
+            placeholder-text: "Ketik di sini...";
+            height: 50px;
+            edited(t) => { root.input-data = t; }
         }
 
         Button {
-            text: "PROSES SEKARANG";
-            primary: true;
+            text: "PROSES DATA";
             height: 50px;
-            clicked => {
-                root.process-data(root.input-data);
-            }
+            clicked => { root.process-data(root.input-data) }
         }
 
         Rectangle {
-            background: #1e1e1e;
-            border-radius: 8px;
-            height: 150px;
-            
+            background: root.is-dark-mode ? #1e1e1e : #ffffff;
+            border-radius: 12px;
+            height: 120px;
             VerticalBox {
                 padding: 15px;
-                Text {
-                    text: "HASIL PROSES:";
-                    color: #39ff14;
-                    font-size: 24px;
-                    font-weight: 800;
-                }
+                Text { text: "HASIL:"; color: #39ff14; font-size: 11px; }
                 Text {
                     text: root.result-data;
-                    color: #ffffff;
-                    font-size: 24px;
+                    color: root.is-dark-mode ? #ffffff : #333333;
+                    font-size: 16px;
                     wrap: word-wrap;
                 }
             }
-        }
-
-        Text {
-            text: "VROH CORE v4.5 - ULTRA LITE";
-            color: #444444;
-            font-size: 24px;
-            horizontal-alignment: center;
         }
     }
 }
