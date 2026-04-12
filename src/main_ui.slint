@@ -1,151 +1,111 @@
-import { Button, VerticalBox, ScrollView, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
 
-// === GLOBAL THEME / STYLE DEFINITIONS ===
-// Mas bisa ganti warna di sini, otomatis berubah semua
 export global OdfizTheme {
     in property <color> bg-color: #F8F9FA;
-    in property <color> card-bg: #EEF1F6; // Sedikit lebih gelap dari bg
+    in property <color> card-bg: #EEF1F6;
     in property <color> text-primary: #202124;
     in property <color> text-secondary: #5f6368;
-    in property <color> accent-color: #005FB8; // Biru Shizuku
+    in property <color> accent-color: #005FB8;
     in property <color> text-on-accent: #ffffff;
     
     in property <length> font-size-h1: 28px;
     in property <length> font-size-h2: 18px;
     in property <length> font-size-body: 14px;
     
-    in property <length> card-radius: 24px; // Radius MD3
-    in property <length> button-radius: 20px; // Capsule shape
-    
-    // Jarak Status Bar aman (Sesuaikan dengan Moto G45 Mas)
+    in property <length> card-radius: 24px;
+    in property <length> button-radius: 20px;
     in property <length> status-bar-margin: 35px; 
 }
 
-// === REUSABLE COMPONENTS ===
-
-// 1. Shizuku-style Card
-component OdfizCard inherits Rectangle {
-    background: OdfizTheme.card-bg;
-    border-radius: OdfizTheme.card-radius;
-    padding: 20px;
-    
-    // Shadow tipis biar estetik
-    drop-shadow-color: #0000001A;
-    drop-shadow-offset-y: 2px;
-    drop-shadow-blur: 4px;
-}
-
-// 2. Shizuku-style Button (Capsule)
-// Karena Slint default button susah di-style capsule, kita bikin sendiri
 component OdfizButton inherits Rectangle {
     in property <string> text;
-    in property <bool> has-icon: false; // Nanti bisa ditambah logika ikon
-    
+    in property <bool> has-icon: false;
     callback clicked();
 
     background: OdfizTheme.accent-color;
     border-radius: OdfizTheme.button-radius;
-    height: 40px; // Tinggi MD3 standar
-    // Lebar otomatis ngikut teks + padding
-    width: txt.preferred-width + (has-icon ? 50px : 30px);
+    height: 40px;
+    width: txt.preferred-width + (has-icon ? 50px : 40px);
 
-    Text {
-        id: txt;
+    txt := Text {
         text: root.text;
         color: OdfizTheme.text-on-accent;
         font-size: OdfizTheme.font-size-body;
         font-weight: 700;
-        vertical-alignment: center;
-        horizontal-alignment: center;
     }
 
     TouchArea {
         clicked => { root.clicked() }
-        // Efek klik sederhana
-        mouse-cursor: pointer;
     }
 }
 
-
-// === MAIN APPLICATION WINDOW ===
 export component AppWindow inherits Window {
     title: "Odfiz Processor";
     background: OdfizTheme.bg-color;
     default-font-family: "sans-serif";
     
-    // Kirim data ke Rust
+    in-out property <string> result-display: "Ready to process...";
     callback process-data(string);
 
     VerticalBox {
         padding-left: 16px;
         padding-right: 16px;
-        spacing: 0px; // Spacing diatur manual di dalam
-
-        // 1. HEADER (Jarak aman Status Bar)
+        
+        // Header
         Rectangle {
-            height: 60px;
+            height: 60px + OdfizTheme.status-bar-margin;
             padding-top: OdfizTheme.status-bar-margin;
             
-            HorizontalBox {
-                alignment: start;
-                spacing: 10px;
-                Text {
-                    text: "Odfiz Processor";
-                    font-size: OdfizTheme.font-size-h1;
-                    color: OdfizTheme.text-primary;
-                    font-weight: 700;
-                    vertical-alignment: center;
-                }
-                // Disini Mas bisa taruh ikon setting kalau mau
-                Rectangle { width: 1px; } // Spacer
+            Text {
+                text: "Odfiz Processor";
+                font-size: OdfizTheme.font-size-h1;
+                color: OdfizTheme.text-primary;
+                font-weight: 700;
+                x: 0;
             }
         }
 
-        // Space antara header dan card pertama
-        Rectangle { height: 16px; }
-
-        // MENGGUNAKAN SCROLLVIEW BIAR GAK POTONG DI LAYAR KECIL
         ScrollView {
             VerticalBox {
-                spacing: 12px; // Jarak antar card
-                padding-bottom: 30px; // Padding bawah aman
+                spacing: 12px;
+                padding-bottom: 20px;
 
-                // --- CARD 1: INPUT DATA ---
-                OdfizCard {
+                // CARD INPUT
+                Rectangle {
+                    background: OdfizTheme.card-bg;
+                    border-radius: OdfizTheme.card-radius;
+                    padding: 20px;
+
                     VerticalBox {
-                        spacing: 10px;
+                        spacing: 12px;
                         Text {
                             text: "Start Data Processing";
                             font-size: OdfizTheme.font-size-h2;
                             color: OdfizTheme.text-primary;
                         }
-                        Text {
-                            text: "Masukkan teks di bawah untuk diubah menjadi Uppercase oleh mesin Rust kami.";
-                            font-size: OdfizTheme.font-size-body;
-                            color: OdfizTheme.text-secondary;
-                            wrap: word-wrap;
-                        }
                         
-                        LineEdit {
-                            id: input-field;
+                        // Cara penulisan ID yang benar (id := Element)
+                        input_field := LineEdit {
                             placeholder-text: "Ketik data di sini...";
                             height: 45px;
-                            // Style LineEdit agar senada (tipis)
                         }
 
-                        // TOMBOL UTAMA (Sama gaya dengan Shizuku)
                         HorizontalBox {
                             alignment: start;
                             OdfizButton {
                                 text: "PROSES DATA";
-                                clicked => { root.process-data(input-field.text) }
+                                clicked => { root.process-data(input_field.text) }
                             }
                         }
                     }
                 }
 
-                // --- CARD 2: HASIL ---
-                OdfizCard {
+                // CARD HASIL
+                Rectangle {
+                    background: OdfizTheme.card-bg;
+                    border-radius: OdfizTheme.card-radius;
+                    padding: 20px;
+
                     VerticalBox {
                         spacing: 8px;
                         Text {
@@ -155,17 +115,15 @@ export component AppWindow inherits Window {
                         }
                         
                         Rectangle {
-                            background: #ffffff; // Putih bersih buat area hasil
-                            border-radius: 8px;
-                            height: 80px;
-                            VerticalBox {
-                                padding: 10px;
-                                Text {
-                                    text: "Ready to process...";
-                                    color: #333333;
-                                    font-size: 16px;
-                                    wrap: word-wrap;
-                                }
+                            background: #ffffff;
+                            border-radius: 12px;
+                            height: 100px;
+                            padding: 15px;
+                            Text {
+                                text: root.result-display;
+                                color: #333333;
+                                font-size: 16px;
+                                wrap: word-wrap;
                             }
                         }
                     }
