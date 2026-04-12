@@ -1,73 +1,85 @@
 import { Button, CheckBox, ComboBox, Slider, LineEdit, StandardListView, TabWidget, GroupBox, VerticalBox, ScrollView, ProgressIndicator } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Widget Gallery";
+    title: "Odfiz Cupertino Gallery";
     preferred-width: 400px;
     preferred-height: 800px;
-    background: #f2f2f7;
+    background: #f2f2f7; // Warna abu-abu muda iOS
 
     ScrollView {
         VerticalBox {
-            padding: 20px;
-            spacing: 15px;
+            // Padding top ditambahkan 50px agar aman dari Status Bar Android
+            padding-top: 50px; 
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-bottom: 30px;
+            spacing: 20px;
 
             Text {
-                text: "Slint Widget Gallery";
-                font-size: 26px;
+                text: "Widget Gallery";
+                font-size: 32px;
                 font-weight: 800;
-                color: #1c1c1e;
+                color: #000000;
             }
 
-            GroupBox {
-                title: "Buttons & Interaction";
+            // Group: Controls dengan gaya kartu (Card Style)
+            Rectangle {
+                background: #ffffff;
+                border-radius: 12px;
                 VerticalBox {
-                    Button { text: "Regular Button"; }
-                    Button { text: "Primary Button"; primary: true; }
-                    CheckBox { text: "Widgets Enabled"; checked: true; }
-                }
-            }
-
-            GroupBox {
-                title: "Input & Selection";
-                VerticalBox {
-                    spacing: 10px;
-                    LineEdit { placeholder-text: "Type something here..."; }
-                    ComboBox {
-                        model: ["Cupertino Style", "Material Style", "Native Style"];
-                        current-value: "Cupertino Style";
+                    padding: 15px;
+                    spacing: 12px;
+                    Text { text: "CONTROLS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
+                    
+                    CheckBox { text: "Widgets enabled"; checked: true; }
+                    
+                    HorizontalBox {
+                        alignment: start;
+                        Text { text: "Dark Mode"; vertical-alignment: center; }
+                        // Simulasi Switch (karena Switch kadang beda tiap backend)
+                        CheckBox { text: ""; } 
                     }
                 }
             }
 
-            GroupBox {
-                title: "Indicators & Sliders";
+            // Group: Buttons
+            Rectangle {
+                background: #ffffff;
+                border-radius: 12px;
                 VerticalBox {
+                    padding: 15px;
+                    spacing: 12px;
+                    Text { text: "BUTTONS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
+                    
+                    Button { 
+                        text: "Regular Button"; 
+                    }
+                    Button { 
+                        text: "Primary Button"; 
+                        primary: true;
+                    }
+                }
+            }
+
+            // Group: Pickers & Sliders
+            Rectangle {
+                background: #ffffff;
+                border-radius: 12px;
+                VerticalBox {
+                    padding: 15px;
                     spacing: 15px;
-                    Text { text: "Progress: 65%"; color: #8e8e93; }
-                    ProgressIndicator { progress: 65%; }
-                    Slider { value: 42; minimum: 0; maximum: 100; }
+                    Text { text: "INDICATORS"; color: #8e8e93; font-size: 12px; font-weight: 600; }
+                    
+                    LineEdit { placeholder-text: "Enter some text..."; }
+                    
+                    Slider { value: 60; }
+                    
+                    ProgressIndicator { progress: 60%; }
                 }
             }
 
-            GroupBox {
-                title: "Tab Navigation";
-                TabWidget {
-                    Tab {
-                        title: "Controls";
-                        VerticalBox {
-                            padding: 10px;
-                            Button { text: "Click in Tab 1"; }
-                        }
-                    }
-                    Tab {
-                        title: "Views";
-                        Text { text: "ListView content goes here."; padding: 10px; }
-                    }
-                }
-            }
-            
-            // Tambahkan jarak di bawah agar tidak mentok navigasi HP
-            Rectangle { height: 40px; }
+            // Spacer bawah agar nyaman di-scroll
+            Rectangle { height: 60px; }
         }
     }
 }
