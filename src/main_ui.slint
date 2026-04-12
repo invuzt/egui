@@ -1,101 +1,81 @@
-import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { Button, VerticalBox, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Apk Penghasil Uang VROH";
-    background: #0d0d0d;
-    preferred-width: 400px;
-    preferred-height: 850px;
+    title: "Odfiz Data Processor";
+    background: #121212; // Material Dark
+    preferred-width: 360px;
+    preferred-height: 640px;
+    default-font-family: "sans-serif"; // Pakai font Android
 
-    in-out property <string> log-text: "[SYS] Initializing...\n[INFO] Odfiz Pool V4.2 Connected";
-    in-out property <string> balance: "0.00001245";
-    in-out property <float> progress: 0.0;
-    in-out property <bool> is-mining: true;
+    in-out property <string> input-data: "";
+    in-out property <string> result-data: "Menunggu input...";
 
-    callback toggle-mining();
+    callback process-data(string);
 
     VerticalBox {
-        padding-top: 60px;
-        padding-left: 20px;
-        padding-right: 20px;
+        padding: 30px;
         spacing: 20px;
+        alignment: start;
 
         Text {
-            text: "Apk Penghasil Uang VROH";
-            font-size: 26px;
-            font-weight: 800;
+            text: "Odfiz Processor";
             color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
             horizontal-alignment: center;
         }
 
-        // STATS CARD UTAMA
-        Rectangle {
-            height: 160px;
-            background: #16213e;
-            border-radius: 16px;
-            border-width: 2px;
-            border-color: #39ff14;
-
-            VerticalBox {
-                alignment: center;
-                Text { text: "CURRENT BALANCE"; color: #aaaaaa; font-size: 14px; }
-                Text { 
-                    text: root.balance + " BTC"; 
-                    color: #39ff14; 
-                    font-size: 38px; 
-                    font-weight: 900; 
-                }
-                Text { text: "HASHRATE: 62.40 TH/s | STABLE"; color: #00d2ff; font-size: 12px; }
-            }
+        Text {
+            text: "Masukkan data untuk diproses di Rust:";
+            color: #aaaaaa;
+            font-size: 24px;
         }
 
-        // LOG MONITOR
-        Rectangle {
-            background: #000000;
-            border-radius: 10px;
-            height: 220px;
-            border-width: 1px;
-            border-color: #333;
-            
-            ScrollView {
-                VerticalBox {
-                    padding: 12px;
-                    Text { 
-                        text: root.log-text; 
-                        color: #00ff00; 
-                        font-family: "monospace"; 
-                        font-size: 13px; 
-                        wrap: word-wrap; 
-                    }
-                }
-            }
-        }
-
-        // PROGRESS
-        VerticalBox {
-            spacing: 8px;
-            Text { text: "SOLVING BLOCK..."; color: #666; font-size: 12px; }
-            Rectangle {
-                height: 14px; background: #222; border-radius: 7px;
-                Rectangle {
-                    x: 0; width: parent.width * root.progress;
-                    background: #39ff14; border-radius: 7px;
-                    animate width { duration: 100ms; }
-                }
+        LineEdit {
+            placeholder-text: "Ketik sesuatu di sini...";
+            font-size: 24px;
+            height: 45px;
+            edited(text) => {
+                root.input-data = text;
             }
         }
 
         Button {
-            text: root.is-mining ? "STOP ENGINE" : "START MINING";
+            text: "PROSES SEKARANG";
             primary: true;
-            height: 60px;
-            clicked => { root.toggle-mining() }
+            height: 50px;
+            clicked => {
+                root.process-data(root.input-data);
+            }
         }
 
-        Text { 
-            text: "ODFIZ VROH CORE v4.2 - PONOROGO ENGINE"; 
-            color: #444; 
-            font-size: 11px; 
-            horizontal-alignment: center; 
+        Rectangle {
+            background: #1e1e1e;
+            border-radius: 8px;
+            height: 150px;
+            
+            VerticalBox {
+                padding: 15px;
+                Text {
+                    text: "HASIL PROSES:";
+                    color: #39ff14;
+                    font-size: 24px;
+                    font-weight: 800;
+                }
+                Text {
+                    text: root.result-data;
+                    color: #ffffff;
+                    font-size: 24px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        Text {
+            text: "VROH CORE v4.5 - ULTRA LITE";
+            color: #444444;
+            font-size: 24px;
+            horizontal-alignment: center;
         }
     }
 }

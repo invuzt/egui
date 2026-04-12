@@ -7,7 +7,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-slint = { version = "1.15.1", features = ["compat-1-2", "backend-android-activity-06", "renderer-software"] }
+slint = { version = "1.15.1", default-features = false, features = ["compat-1-2", "backend-android-activity-06", "renderer-software"] }
 
 [build-dependencies]
 slint-build = "1.15.1"
+
+[profile.release]
+opt-level = "z"     # Optimasi ukuran terkecil
+lto = true          # Link Time Optimization
+codegen-units = 1   # Maksimalkan optimasi
+panic = "abort"     # Buang overhead error handling
+strip = true        # Hapus simbol debug otomatis
