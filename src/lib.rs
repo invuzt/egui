@@ -8,64 +8,48 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // --- LOGIKA MINING ---
-    ui.on_toggle_mining({
-        let ui_handle = ui_handle.clone();
-        move || {
-            let ui = ui_handle.unwrap();
-            let is_mining = ui.get_is_mining();
-            ui.set_is_mining(!is_mining);
-        }
-    });
-
-    // --- TIMER UNTUK ANIMASI & LIVE UPDATE ---
+    // 1. Timer untuk Simulasi Saldo & Log
     let timer = Timer::default();
     timer.start(TimerMode::Repeated, Duration::from_secs(1), {
         let ui_handle = ui_handle.clone();
         move || {
             if let Some(ui) = ui_handle.upgrade() {
                 if ui.get_is_mining() {
-                    // 1. Naikkan Saldo (Simulasi)
-                    let current_balance: f64 = ui.get_balance().parse().unwrap_or(0.0);
-                    let new_balance = current_balance + 0.00000003; // Nambah receh
-                    ui.set_balance(format!("{:.8}", new_balance).into());
-
-                    // 2. Update Progress (Looping)
-                    let mut current_progress = ui.get_progress();
-                    current_progress += 0.02;
-                    if current_progress > 1.0 { current_progress = 0.0; }
-                    ui.set_progress(current_progress);
-
-                    // 3. Tambahkan Log (Randomized)
-                    let mut log = ui.get_log_text().to_string();
-                    if current_progress > 0.9 {
-                        log.push_str("\n[OK] Block found! Reward accepted!");
-                    } else if current_progress < 0.1 {
-                        log.push_str("\n[WORK] Job update from pool");
-                    }
-                    // Batasi baris log agar tidak terlalu panjang
-                    let lines: Vec<&str> = log.lines().collect();
-                    if lines.len() > 10 {
-                        ui.set_log_text(lines[lines.len()-10..].join("\n").into());
-                    } else {
-                        ui.set_log_text(log.into());
-                    }
+                    let current: f64 = ui.get_balance().parse().unwrap_or(0.0);
+                    ui.set_balance(format!("{:.8}", current + 0.00000005).into());
                 }
             }
         }
     });
 
-    // Timer khusus untuk Headline Ticker (Looping)
-    let ticker_timer = Timer::default();
-    ticker_timer.start(TimerMode::Repeated, Duration::from_secs(10), {
+    // 2. Timer untuk Cek Pesan Admin dari Internet (GitHub)
+    let admin_timer = Timer::default();
+    admin_timer.start(TimerMode::Repeated, Duration::from_secs(30), {
         let ui_handle = ui_handle.clone();
         move || {
-            if let Some(ui) = ui_handle.upgrade() {
-                // Di sini kita bisa update data statistiknya secara berkala
-                // Tapi untuk sekarang kita cuma trigger animasinya biar loop
-                let stats = ui.get_running_stats().to_string();
-                ui.set_running_stats(stats.into()); 
-            }
+            let ui_handle = ui_handle.clone();
+            // Jalankan request di thread terpisah agar UI tidak freeze
+            std::thread::spawn(move || {
+                // GANTI URL INI dengan link Raw GitHub Mas nanti
+                let url = "https://raw.githubusercontent.com/username/repo/main/pesan.txt";
+                if let Ok(response) = reqwest::blocking::get(url) {
+                    if let Ok(text) = response.text() {
+                        let _ = slint::invoke_from_event_loop(move || {
+                            if let Some(ui) = ui_handle.upgrade() {
+                                ui.set_admin_msg(text.trim().into());
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    ui.on_toggle_mining({
+        let ui_handle = ui_handle.clone();
+        move || {
+            let ui = ui_handle.unwrap();
+            ui.set_is_mining(!ui.get_is_mining());
         }
     });
 

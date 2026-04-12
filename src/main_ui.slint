@@ -1,45 +1,24 @@
 import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
-// Komponen Terminal Khusus
-component TerminalView inherits Rectangle {
-    in property <string> text;
-    background: #000000;
-    border-radius: 8px;
-    
-    ScrollView {
-        padding: 10px;
-        Text { 
-            text: root.text; 
-            color: #00ff00; 
-            font-family: "monospace"; 
-            font-size: 12px; // Font agak diperbesar
-            wrap: word-wrap;
-        }
-    }
-}
-
 export component AppWindow inherits Window {
     title: "Apk Penghasil Uang VROH";
     background: #0d0d0d;
     preferred-width: 400px;
     preferred-height: 850px;
 
-    // Properti Dinamis
     in-out property <string> log-text: "[SYS] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
     in-out property <string> balance: "0.00001245";
-    in-out property <string> running-stats: "HASHRATE: 45.12 TH/s | DIFFICULTY: 82.5T | REWARD: 3.125 BTC | NODES: 741";
+    in-out property <string> running-stats: "HASHRATE: 45.12 TH/s | DIFFICULTY: 82.5T | REWARD: 3.125 BTC";
+    in-out property <string> admin-msg: ""; // Pesan dari Mas
     in-out property <float> progress: 0.4;
     in-out property <bool> is-mining: true;
 
-    // Timer Callback untuk Grafik & Teks Berjalan
-    callback tick();
     callback toggle-mining();
 
     VerticalBox {
         padding-top: 60px;
         padding-left: 20px;
         padding-right: 20px;
-        padding-bottom: 20px;
         spacing: 15px;
 
         Text {
@@ -50,32 +29,18 @@ export component AppWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        // --- Headline Berjalan (Ticker) ---
-        Rectangle {
-            height: 30px;
-            background: #1a1a1a;
-            border-radius: 4px;
-            clip: true; // Potong teks yang keluar area
-            
-            // Teks yang bergerak ke kiri
-            Text {
-                x: parent.width * 1.0; // Start dari kanan
-                text: root.running-stats;
-                color: #ff9f43;
-                font-size: 14px;
-                font-family: "monospace";
-                vertical-alignment: center;
-                
-                // Animasi Berjalan
-                animate x {
-                    duration: 10s; 
-                    easing: ease-in-out-quad;
-                    // Logika untuk loop animasi di lib.rs
-                }
+        // --- ADMIN NOTIFICATION BOX ---
+        if (admin-msg != "") : Rectangle {
+            height: 50px;
+            background: #ff4757;
+            border-radius: 8px;
+            HorizontalBox {
+                alignment: center;
+                Text { text: "⚠️ ADMIN: " + root.admin-msg; color: white; font-weight: 900; }
             }
         }
 
-        // --- Stats Card (Besar & Rapi) ---
+        // --- STATS CARD ---
         Rectangle {
             height: 140px;
             background: #16213e;
@@ -87,36 +52,19 @@ export component AppWindow inherits Window {
                 alignment: center;
                 padding: 15px;
                 Text { text: "MINING PROFITABILITY"; color: #bbbbbb; font-size: 14px; }
-                Text { 
-                    text: root.balance + " BTC"; 
-                    color: #39ff14; 
-                    font-size: 36px; // Font diperbesar
-                    font-weight: 800; 
-                }
-                Text { text: "LIVE UPDATE | TESTNET", color: #555, font-size: 11px }
+                Text { text: root.balance + " BTC"; color: #39ff14; font-size: 36px; font-weight: 800; }
+                Text { text: "LIVE UPDATE | TESTNET"; color: #555555; font-size: 11px; } // SUDAH FIX (;)
             }
         }
 
-        // --- Live Graph Area (Simulasi) ---
+        // --- LOG VIEW ---
         Rectangle {
-            height: 100px;
-            background: #1a1a1a;
+            background: #000;
             border-radius: 8px;
-            Text { text: "LIVE HASHRATE GRAPH (SIM)"; color: #444; horizontal-alignment: center; vertical-alignment: center;}
-            
-            // Gambar Garis Naik Turun (Pakai Rectangle kecil yang bergeser)
-            Rectangle {
-                x: 0; width: parent.width * 0.9; height: 80px; y: 10px;
-                
-                Rectangle { x: 10%; y: 60%; width: 5px; height: 30px; background: #39ff14; }
-                Rectangle { x: 20%; y: 40%; width: 5px; height: 50px; background: #39ff14; }
-                Rectangle { x: 30%; y: 55%; width: 5px; height: 35px; background: #39ff14; }
-                Rectangle { x: 40%; y: 20%; width: 5px; height: 70px; background: #39ff14; }
-                Rectangle { x: 50%; y: 50%; width: 5px; height: 40px; background: #39ff14; }
-                Rectangle { x: 60%; y: 70%; width: 5px; height: 20px; background: #39ff14; }
-                Rectangle { x: 70%; y: 45%; width: 5px; height: 45px; background: #39ff14; }
-                Rectangle { x: 80%; y: 30%; width: 5px; height: 60px; background: #39ff14; }
-                // Grafik ini akan terlihat "berjalan" karena kita geser posisinya di lib.rs
+            height: 250px;
+            ScrollView {
+                padding: 10px;
+                Text { text: root.log-text; color: #00ff00; font-family: "monospace"; font-size: 12px; wrap: word-wrap; }
             }
         }
 
@@ -128,18 +76,10 @@ export component AppWindow inherits Window {
                 Rectangle {
                     x: 0; width: parent.width * root.progress;
                     background: #39ff14; border-radius: 6px;
-                    animate width { duration: 500ms; }
                 }
             }
         }
 
-        // --- Terminal View ---
-        TerminalView {
-            height: 200px;
-            text: root.log-text;
-        }
-
-        // --- Button & Footer ---
         Button {
             text: root.is-mining ? "STOP MINER" : "START MINING ENGINE";
             primary: true;
@@ -147,9 +87,6 @@ export component AppWindow inherits Window {
             clicked => { root.toggle-mining() }
         }
 
-        Text {
-            text: "ODFIZ CORE v4.1 - TESTNET - @VROH";
-            color: #444; font-size: 11px; horizontal-alignment: center;
-        }
+        Text { text: "ODFIZ CORE v4.2 - @VROH"; color: #444; font-size: 11px; horizontal-alignment: center; }
     }
 }
