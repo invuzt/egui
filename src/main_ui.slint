@@ -1,10 +1,12 @@
 import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
-    in property <color> bg-color: #F8F9FA;
-    in property <color> card-bg: #EEF1F6;
-    in property <color> accent-color: #005FB8;
-    in property <color> text-primary: #202124;
+    // --- GANTI WARNA DI SINI BIAR JADI ODFIZ CORE ---
+    in property <color> bg-color: #0c0c0c;       // Hitam pekat
+    in property <color> card-bg: #1a1a1a;       // Abu gelap untuk Card
+    in property <color> accent-color: #ff4d6d;  // Pink-Merah khas Odfiz
+    in property <color> text-primary: #ffffff;  // Putih bersih
+    in property <color> text-secondary: #888888;
     in property <length> status-bar-margin: 35px;
 }
 
@@ -12,171 +14,107 @@ component OdfizButton inherits Rectangle {
     in property <string> text;
     callback clicked();
     background: OdfizTheme.accent-color;
-    border-radius: 22.5px;
-    height: 45px;
-    width: txt.preferred-width + 40px;
+    border-radius: 12px; // Gaya Odfiz lebih kotak-elegan dibanding Shizuku
+    height: 48px;
+    width: txt.preferred-width + 60px;
 
     txt := Text {
         text: root.text;
         color: white;
-        font-weight: 700;
+        font-weight: 800; // Lebih tebal
+        font-size: 16px;
     }
 
     TouchArea { clicked => { root.clicked() } }
 }
 
 export component AppWindow inherits Window {
-    title: "Odfiz Processor";
+    title: "Odfiz Core Engine";
     background: OdfizTheme.bg-color;
     
-    property <bool> show-settings: false;
-    property <bool> show-menu: false;
-    
-    in-out property <string> result-display: "Ready...";
+    in-out property <string> result-display: "SYSTEM ONLINE";
     callback process-data(string);
 
-    // Z-Stack: Main Content
-    Rectangle {
+    VerticalBox {
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 0;
+
+        // HEADER
         VerticalBox {
-            padding-left: 16px;
-            padding-right: 16px;
-            spacing: 0;
+            padding-top: OdfizTheme.status-bar-margin;
+            Rectangle {
+                height: 80px;
+                Text {
+                    text: "ODFIZ CORE";
+                    font-size: 24px;
+                    font-weight: 900;
+                    color: OdfizTheme.accent-color; // Judul jadi merah
+                    letter-spacing: 2px;
+                    x: 0;
+                }
+            }
+        }
 
-            // HEADER (Dibutuhkan VerticalBox tambahan agar padding-top berfungsi)
+        ScrollView {
             VerticalBox {
-                padding-top: OdfizTheme.status-bar-margin;
+                spacing: 20px;
+                padding-bottom: 20px;
+
+                // CARD GAYA ODFIZ (Ada aksen garis di samping)
                 Rectangle {
-                    height: 60px;
-                    HorizontalBox {
-                        alignment: space-between;
-                        padding: 0;
-                        Text {
-                            text: "Odfiz Processor";
-                            font-size: 28px;
-                            font-weight: 700;
-                            color: OdfizTheme.text-primary;
-                        }
-                        HorizontalBox {
-                            spacing: 15px;
-                            padding: 0;
-                            Text { 
-                                text: "⚙"; font-size: 24px; color: OdfizTheme.text-primary; 
-                                TouchArea { clicked => { root.show-settings = true } }
-                            }
-                            Text { 
-                                text: "⋮"; font-size: 24px; color: OdfizTheme.text-primary; 
-                                TouchArea { clicked => { root.show-menu = true } }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ScrollView {
-                VerticalBox {
-                    spacing: 15px;
-                    padding-bottom: 20px;
-
-                    // CARD INPUT
+                    background: OdfizTheme.card-bg;
+                    border-radius: 16px;
+                    
+                    // Garis merah tipis di samping kiri (ciri khas Odfiz Tech)
                     Rectangle {
-                        background: OdfizTheme.card-bg;
-                        border-radius: 24px;
-                        VerticalBox {
-                            padding: 20px;
-                            spacing: 15px;
-                            Text { text: "🤖 Rust Engine Core"; font-size: 18px; font-weight: 600; }
-                            
-                            Rectangle {
-                                background: white;
-                                border-radius: 22.5px;
-                                border-width: 1px;
-                                border-color: #dadce0;
-                                height: 45px;
-                                input_field := LineEdit {
-                                    placeholder-text: "Ketik di sini...";
-                                    font-size: 16px;
-                                }
-                            }
-
-                            HorizontalBox {
-                                alignment: start;
-                                padding: 0;
-                                OdfizButton {
-                                    text: "▶ PROSES SEKARANG";
-                                    clicked => { root.process-data(input_field.text) }
-                                }
-                            }
-                        }
+                        width: 4px;
+                        height: parent.height - 30px;
+                        background: OdfizTheme.accent-color;
+                        x: 0;
+                        border-radius: 2px;
                     }
 
-                    // CARD HASIL
-                    Rectangle {
-                        background: OdfizTheme.card-bg;
-                        border-radius: 24px;
-                        VerticalBox {
-                            padding: 20px;
-                            spacing: 10px;
-                            Text { text: "Output Log"; font-weight: 600; }
-                            Rectangle {
-                                background: white;
-                                border-radius: 12px;
-                                height: 120px;
-                                VerticalBox {
-                                    padding: 15px;
-                                    Text { text: root.result-display; color: #333333; wrap: word-wrap; }
-                                }
+                    VerticalBox {
+                        padding: 25px;
+                        spacing: 15px;
+                        
+                        Text { text: "INPUT ENGINE"; font-size: 14px; color: OdfizTheme.text-secondary; font-weight: 700; }
+                        
+                        Rectangle {
+                            background: #252525;
+                            border-radius: 8px;
+                            height: 50px;
+                            input_field := LineEdit {
+                                placeholder-text: "Enter data...";
+                                font-size: 16px;
                             }
+                        }
+
+                        OdfizButton {
+                            text: "REFRESH / PROCESS";
+                            clicked => { root.process-data(input_field.text) }
                         }
                     }
                 }
-            }
-        }
 
-        // --- OVERLAY SETTINGS ---
-        if (root.show-settings) : Rectangle {
-            background: #00000088;
-            TouchArea { clicked => { root.show-settings = false } }
-            
-            Rectangle {
-                width: 300px; // Pakai absolute length agar aman
-                height: 250px;
-                background: white;
-                border-radius: 24px;
-                VerticalBox {
-                    padding: 20px;
-                    alignment: start;
-                    Text { text: "Settings"; font-size: 20px; font-weight: 700; color: black; }
-                    Rectangle { height: 10px; }
-                    Text { text: "• Theme: Light"; color: #555; }
-                    Text { text: "• Engine: Rust 1.80"; color: #555; }
-                    Rectangle { height: 20px; }
-                    Button { text: "CLOSE"; clicked => { root.show-settings = false } }
-                }
-            }
-        }
-
-        // --- OVERLAY MENU (Dropdown style) ---
-        if (root.show-menu) : Rectangle {
-            background: #00000011; // Lebih transparan
-            TouchArea { clicked => { root.show-menu = false } }
-            
-            Rectangle {
-                width: 180px;
-                height: 150px;
-                // Posisi manual agar pas di pojok kanan atas bawah ikon ⋮
-                x: parent.width - self.width - 20px;
-                y: 80px; 
-                background: white;
-                border-radius: 16px;
-                drop-shadow-blur: 8px;
-                drop-shadow-color: #00000044;
-                
-                VerticalBox {
-                    padding: 10px;
-                    alignment: space-around;
-                    Text { text: "Option 1"; color: black; horizontal-alignment: center; }
-                    Text { text: "Option 2"; color: black; horizontal-alignment: center; }
-                    Text { text: "About Odfiz"; color: black; horizontal-alignment: center; }
+                // STATUS CARD
+                Rectangle {
+                    background: OdfizTheme.card-bg;
+                    border-radius: 16px;
+                    VerticalBox {
+                        padding: 20px;
+                        Text { text: "SYSTEM LOG"; font-weight: 700; color: OdfizTheme.text-secondary; }
+                        Rectangle {
+                            height: 100px;
+                            Text { 
+                                text: root.result-display; 
+                                color: #00ff88; // Hijau neon buat status
+                                font-family: "monospace";
+                                font-size: 18px;
+                            }
+                        }
+                    }
                 }
             }
         }
