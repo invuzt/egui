@@ -5,11 +5,17 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     slint::android::init(app).unwrap();
     let ui = AppWindow::new().unwrap();
     
-    // Ambil konfigurasi sistem untuk deteksi Dark Mode
+    // --- FIX DETEKSI TEMA ---
     let config = app.config();
-    let ui_mode = config.ui_mode();
-    let is_night = (ui_mode & 0x30) == 0x20;
+    // Kita gunakan ui_mode_night() untuk cek status malam/gelap
+    // Method ini mengembalikan enum atau bitmask tergantung versi, 
+    // cara paling umum adalah cek apakah nilainya 'Night' (Yes)
+    let ui_mode = config.ui_mode_night();
+    
+    // Biasanya 0x20 adalah Night Yes (Gelap)
+    let is_night = ui_mode == android_activity::config::UiModeNight::Yes;
     ui.set_is_dark_mode(is_night);
+    // ------------------------
 
     let ui_handle = ui.as_weak();
     ui.on_process_data(move |input| {
