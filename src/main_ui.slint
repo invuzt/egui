@@ -1,58 +1,107 @@
-import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, GroupBox } from "std-widgets.slint";
+import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, TabWidget, StandardListView } from "std-widgets.slint";
+
+// Custom Switch sederhana karena Switch bawaan sering butuh backend khusus
+component MySwitch inherits Rectangle {
+    in-out property <bool> checked;
+    callback toggled(bool);
+    width: 50px;
+    height: 28px;
+    background: checked ? #34c759 : #e9e9eb;
+    border-radius: 14px;
+    animate background { duration: 200ms; }
+
+    Rectangle {
+        x: checked ? 24px : 2px;
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 12px;
+        drop-shadow-blur: 4px;
+        drop-shadow-color: #00000022;
+        animate x { duration: 200ms; easing: ease-out; }
+    }
+    
+    TouchArea {
+        clicked => { 
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}
 
 export component AppWindow inherits Window {
-    title: "Odfiz Cupertino Gallery";
+    title: "Odfiz Slint Showcase";
     preferred-width: 400px;
-    preferred-height: 800px;
-    background: #f2f2f7; 
+    preferred-height: 850px;
+    background: #f2f2f7;
 
-    ScrollView {
-        VerticalBox {
-            padding-top: 60px;
-            padding-left: 20px;
-            padding-right: 20px;
-            spacing: 20px;
+    in-out property <string> active-status: "Ready";
 
-            Text {
-                text: "Cupertino Style";
-                font-size: 32px;
-                font-weight: 800;
-                color: #000000;
-            }
+    VerticalBox {
+        padding-top: 60px;
+        padding-left: 15px;
+        padding-right: 15px;
+        spacing: 15px;
 
-            GroupBox {
-                title: "Action Buttons";
-                VerticalBox {
-                    spacing: 10px;
-                    Button { text: "Cupertino Button"; primary: true; }
-                    Button { text: "Secondary Action"; }
-                }
-            }
-
-            GroupBox {
-                title: "Selection Controls";
-                VerticalBox {
-                    spacing: 15px;
-                    HorizontalBox {
-                        padding: 0;
-                        alignment: start;
-                        CheckBox { text: "Enable Feature"; checked: true; }
-                    }
-                    Slider { value: 50; }
-                    ComboBox {
-                        model: ["Item 1", "Item 2", "Item 3"];
-                        current-value: "Item 1";
-                    }
-                }
-            }
-
-            GroupBox {
-                title: "Text Entry";
-                LineEdit { placeholder-text: "iOS style input..."; }
-            }
-            
-            // Spacer agar tidak mentok bawah
-            Rectangle { height: 50px; }
+        Text {
+            text: "Odfiz Showcase";
+            font-size: 28px;
+            font-weight: 800;
         }
+
+        TabWidget {
+            Tab {
+                title: "Controls";
+                ScrollView {
+                    VerticalBox {
+                        padding: 15px;
+                        spacing: 20px;
+                        
+                        Text { text: "Toggle & Options"; font-weight: 700; }
+                        
+                        HorizontalBox {
+                            alignment: space-between;
+                            Text { text: "Enable Turbo Engine"; vertical-alignment: center; }
+                            MySwitch { 
+                                checked: true;
+                                toggled(state) => { root.active-status = state ? "Engine On" : "Engine Off" }
+                            }
+                        }
+
+                        Slider { value: 50; }
+                        
+                        ComboBox {
+                            model: ["Cupertino (iOS)", "Material (Android)", "Fluent (Windows)"];
+                            current-value: "Cupertino (iOS)";
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Inputs";
+                VerticalBox {
+                    padding: 15px;
+                    spacing: 15px;
+                    LineEdit { placeholder-text: "Username..."; }
+                    LineEdit { placeholder-text: "Password..."; input-type: password; }
+                    Button { 
+                        text: "Submit Data"; 
+                        primary: true;
+                        clicked => { root.active-status = "Data Submitted!" }
+                    }
+                }
+            }
+        }
+
+        // Status Bar Bawah
+        Rectangle {
+            height: 40px;
+            background: #ffffff;
+            border-radius: 8px;
+            Text { text: "Status: " + root.active-status; color: #8e8e93; }
+        }
+        
+        Rectangle { height: 30px; } // Safety spacer
     }
 }
