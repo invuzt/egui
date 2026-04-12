@@ -1,107 +1,92 @@
-import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, TabWidget, StandardListView } from "std-widgets.slint";
-
-// Custom Switch sederhana karena Switch bawaan sering butuh backend khusus
-component MySwitch inherits Rectangle {
-    in-out property <bool> checked;
-    callback toggled(bool);
-    width: 50px;
-    height: 28px;
-    background: checked ? #34c759 : #e9e9eb;
-    border-radius: 14px;
-    animate background { duration: 200ms; }
-
-    Rectangle {
-        x: checked ? 24px : 2px;
-        width: 24px;
-        height: 24px;
-        background: white;
-        border-radius: 12px;
-        drop-shadow-blur: 4px;
-        drop-shadow-color: #00000022;
-        animate x { duration: 200ms; easing: ease-out; }
-    }
-    
-    TouchArea {
-        clicked => { 
-            root.checked = !root.checked;
-            root.toggled(root.checked);
-        }
-    }
-}
+import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, TabWidget } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Slint Showcase";
+    title: "Odfiz Dynamic Showcase";
     preferred-width: 400px;
-    preferred-height: 850px;
-    background: #f2f2f7;
+    preferred-height: 800px;
 
-    in-out property <string> active-status: "Ready";
+    // --- LOGIKA TEMA DINAMIS ---
+    in-out property <color> theme-bg: #f2f2f7;
+    in-out property <color> card-bg: #ffffff;
+    in-out property <color> accent-color: #007aff; // Default Blue (Cupertino)
+    in-out property <length> theme-radius: 12px;
+    in-out property <string> current-theme: "Cupertino";
+
+    // Fungsi untuk ganti tema saat ComboBox berubah
+    function change-theme(name: string) {
+        root.current-theme = name;
+        if (name == "Cupertino") {
+            root.theme-bg = #f2f2f7;
+            root.accent-color = #007aff;
+            root.theme-radius = 12px;
+            root.card-bg = #ffffff;
+        } else if (name == "Material") {
+            root.theme-bg = #fafafa;
+            root.accent-color = #6200ee; // Purple Material
+            root.theme-radius = 4px;
+            root.card-bg = #ffffff;
+        } else { // Dark Mode
+            root.theme-bg = #1c1c1e;
+            root.accent-color = #ff9f43;
+            root.theme-radius = 16px;
+            root.card-bg = #2c2c2e;
+        }
+    }
+
+    background: root.theme-bg;
 
     VerticalBox {
         padding-top: 60px;
-        padding-left: 15px;
-        padding-right: 15px;
-        spacing: 15px;
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 20px;
 
         Text {
-            text: "Odfiz Showcase";
+            text: root.current-theme + " Mode";
             font-size: 28px;
             font-weight: 800;
+            color: root.current-theme == "Dark" ? white : black;
+        }
+
+        // Dropdown Ganti Tema (REAL TIME!)
+        ComboBox {
+            model: ["Cupertino", "Material", "Dark"];
+            current-value: root.current-theme;
+            selected(val) => { root.change-theme(val) }
         }
 
         TabWidget {
             Tab {
-                title: "Controls";
-                ScrollView {
+                title: "Showcase";
+                Rectangle {
+                    background: root.card-bg;
+                    border-radius: root.theme-radius;
                     VerticalBox {
-                        padding: 15px;
+                        padding: 20px;
                         spacing: 20px;
                         
-                        Text { text: "Toggle & Options"; font-weight: 700; }
-                        
-                        HorizontalBox {
-                            alignment: space-between;
-                            Text { text: "Enable Turbo Engine"; vertical-alignment: center; }
-                            MySwitch { 
-                                checked: true;
-                                toggled(state) => { root.active-status = state ? "Engine On" : "Engine Off" }
-                            }
+                        Text { 
+                            text: "Dynamic Style"; 
+                            color: root.current-theme == "Dark" ? #cccccc : #8e8e93; 
                         }
 
-                        Slider { value: 50; }
+                        // Tombol yang warnanya ikut tema
+                        Rectangle {
+                            height: 45px;
+                            background: root.accent-color;
+                            border-radius: root.theme-radius;
+                            Text { text: "Adaptive Button"; color: white; font-weight: 700; }
+                            TouchArea { clicked => { /* aksi */ } }
+                        }
+
+                        Slider { value: 40; }
                         
-                        ComboBox {
-                            model: ["Cupertino (iOS)", "Material (Android)", "Fluent (Windows)"];
-                            current-value: "Cupertino (iOS)";
+                        LineEdit { 
+                            placeholder-text: "Input field...";
                         }
                     }
                 }
             }
-
-            Tab {
-                title: "Inputs";
-                VerticalBox {
-                    padding: 15px;
-                    spacing: 15px;
-                    LineEdit { placeholder-text: "Username..."; }
-                    LineEdit { placeholder-text: "Password..."; input-type: password; }
-                    Button { 
-                        text: "Submit Data"; 
-                        primary: true;
-                        clicked => { root.active-status = "Data Submitted!" }
-                    }
-                }
-            }
         }
-
-        // Status Bar Bawah
-        Rectangle {
-            height: 40px;
-            background: #ffffff;
-            border-radius: 8px;
-            Text { text: "Status: " + root.active-status; color: #8e8e93; }
-        }
-        
-        Rectangle { height: 30px; } // Safety spacer
     }
 }
