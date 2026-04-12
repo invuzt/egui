@@ -1,6 +1,6 @@
 slint::include_modules!();
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader};
 
 #[derive(Clone)]
 struct DataRecord {
@@ -16,12 +16,11 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // FITUR: INSERT DARI FILE EKSTERNAL
     ui.on_insert_external_data({
         let ui_handle = ui_handle.clone();
         move || {
             let ui = ui_handle.unwrap();
-            let path = "/sdcard/Download/odfiz_input.txt"; // File yang Mas siapkan
+            let path = "/sdcard/Download/odfiz_input.txt";
             
             if let Ok(file) = File::open(path) {
                 let reader = BufReader::new(file);
@@ -33,30 +32,30 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
                         }
                     }
                     ui.set_total_data(MEMORY_DB.len() as i32);
-                    
-                    let mut sample = String::from("Sample Data:\n");
-                    for item in MEMORY_DB.iter().take(3) {
-                        sample.push_str(&format!("- [{}] {}\n", item.id, item.content));
-                    }
-                    ui.set_preview(sample.into());
+                    ui.set_preview("Data Loaded! Siap dicari.".into());
                 }
-                ui.set_status("Data Imported Successfully!".into());
+                ui.set_status("Import Berhasil!".into());
             } else {
-                ui.set_status("Error: odfiz_input.txt not found in Download".into());
+                ui.set_status("Error: File tidak ada!".into());
             }
         }
     });
 
-    // FITUR: CARI DATA (BINARY SEARCH SIMULATION)
     ui.on_search_data({
         let ui_handle = ui_handle.clone();
         move |query| {
             let ui = ui_handle.unwrap();
+            let search_str = query.as_str(); // Konversi ke &str
+            
             unsafe {
-                let found = MEMORY_DB.iter().find(|r| r.content.contains(&query) || r.id.to_string() == query);
+                // Perbaikan logika perbandingan tipe data
+                let found = MEMORY_DB.iter().find(|r| {
+                    r.content.contains(search_str) || r.id.to_string() == search_str
+                });
+                
                 match found {
-                    Some(res) => ui.set_preview(format!("DITEMUKAN!\nID: {}\nData: {}", res.id, res.content).into()),
-                    None => ui.set_preview("Data tidak ditemukan...".into()),
+                    Some(res) => ui.set_preview(format!("DITEMUKAN!\nID: {}\nIsi: {}", res.id, res.content).into()),
+                    None => ui.set_preview("Data tidak ditemukan.".into()),
                 }
             }
         }

@@ -20,7 +20,6 @@ export component AppWindow inherits Window {
 
         Text { text: "ODFIZ DATA CONTROLLER"; color: #ff9f43; font-weight: 800; horizontal-alignment: center; }
 
-        // Data Info Card
         Rectangle {
             height: 80px; background: #16213e; border-radius: 10px;
             VerticalBox {
@@ -30,7 +29,6 @@ export component AppWindow inherits Window {
             }
         }
 
-        // Search Section
         VerticalBox {
             spacing: 8px;
             Text { text: "Cari ID atau Nama:"; color: white; }
@@ -38,15 +36,20 @@ export component AppWindow inherits Window {
             Button { text: "CARI INSTAN"; primary: true; clicked => { root.search-data(input.text) } }
         }
 
-        // Preview Section
         Rectangle {
-            background: #0f3460; border-radius: 8px; height: 120px;
+            background: #0f3460; border-radius: 8px; height: 150px;
             ScrollView {
-                Text { text: root.preview; color: #eeeeee; font-family: "monospace"; font-size: 11px; padding: 10px; }
+                padding: 10px; // Padding dipindah ke sini
+                Text { 
+                    text: root.preview; 
+                    color: #eeeeee; 
+                    font-family: "monospace"; 
+                    font-size: 11px;
+                    wrap: word-wrap;
+                }
             }
         }
 
-        // Control Buttons
         HorizontalBox {
             spacing: 10px;
             Button { text: "INSERT FILE"; clicked => { root.insert-external-data() } }
