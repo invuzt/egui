@@ -8,15 +8,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 slint = { version = "1.15.1", features = ["compat-1-2", "backend-android-activity-06", "renderer-software"] }
-
+# Tambahkan reqwest dengan fitur blocking untuk sinkronisasi yang mudah
+reqwest = { version = "0.11", features = ["blocking"] }
 
 [build-dependencies]
 slint-build = "1.15.1"
-
-
-[profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
