@@ -1,94 +1,56 @@
 import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Data Engine v2";
+    title: "Odfiz Data Engine v3";
     background: #1a1a2e;
     width: 400px;
-    height: 800px;
+    height: 750px;
 
-    callback process-million-data();
+    callback insert-external-data();
     callback search-data(string);
-    callback save-to-disk();
+    callback save-database();
     
-    in-out property <string> status-text: "System Ready";
-    in-out property <string> preview-text: "No data loaded";
-    in-out property <float> ram-percent: 0.0;
+    in-out property <string> status: "Engine Ready";
+    in-out property <string> preview: "No data in RAM";
+    in-out property <int> total-data: 0;
 
-    ScrollView {
+    VerticalBox {
+        padding: 20px;
+        spacing: 15px;
+
+        Text { text: "ODFIZ DATA CONTROLLER"; color: #ff9f43; font-weight: 800; horizontal-alignment: center; }
+
+        // Data Info Card
+        Rectangle {
+            height: 80px; background: #16213e; border-radius: 10px;
+            VerticalBox {
+                alignment: center;
+                Text { text: "Total Data loaded: " + root.total-data; color: #00d2ff; font-weight: 700; }
+                Text { text: root.status; color: #4cd137; font-size: 11px; }
+            }
+        }
+
+        // Search Section
         VerticalBox {
-            padding: 25px;
-            spacing: 15px;
+            spacing: 8px;
+            Text { text: "Cari ID atau Nama:"; color: white; }
+            input := TextInput { font-size: 16px; color: #00ff00; }
+            Button { text: "CARI INSTAN"; primary: true; clicked => { root.search-data(input.text) } }
+        }
 
-            Image {
-                source: @image-url("../app/src/main/res/mipmap-hdpi/ic_launcher.png");
-                width: 60px;
-                height: 60px;
-                horizontal-alignment: center;
+        // Preview Section
+        Rectangle {
+            background: #0f3460; border-radius: 8px; height: 120px;
+            ScrollView {
+                Text { text: root.preview; color: #eeeeee; font-family: "monospace"; font-size: 11px; padding: 10px; }
             }
+        }
 
-            // Engine Monitor
-            Rectangle {
-                height: 100px;
-                background: #0f3460;
-                border-radius: 12px;
-                VerticalBox {
-                    alignment: center;
-                    Text { text: "ODFIZ STORAGE ENGINE"; color: #ff9f43; font-weight: 800; }
-                    Rectangle {
-                        height: 6px; background: #16213e; border-radius: 3px;
-                        Rectangle {
-                            x: 0; width: parent.width * root.ram-percent;
-                            background: #4cd137; border-radius: 3px;
-                        }
-                    }
-                }
-            }
-
-            // Preview Area (Sample Data)
-            Text { text: "Sample Preview (Top 5):"; color: #00d2ff; font-size: 12px; }
-            Rectangle {
-                background: #16213e;
-                border-radius: 8px;
-                height: 100px;
-                Text {
-                    text: root.preview-text;
-                    color: #bdc3c7;
-                    font-family: "monospace";
-                    font-size: 11px;
-                    padding: 10px;
-                }
-            }
-
-            input := TextInput {
-                font-size: 18px;
-                color: white;
-            }
-
-            HorizontalBox {
-                Button { text: "CARI"; clicked => { root.search-data(input.text) } }
-                Button { 
-                    text: "SAVE TO DISK"; 
-                    primary: true;
-                    clicked => { root.save-to-disk() } 
-                }
-            }
-
-            Button {
-                text: "INSERT 1.000.000 DATA";
-                height: 50px;
-                clicked => { root.process-million-data() }
-            }
-
-            // Console Log
-            Rectangle {
-                background: #000000;
-                border-radius: 5px;
-                height: 120px;
-                VerticalBox {
-                    padding: 8px;
-                    Text { text: root.status-text; color: #00ff00; font-family: "monospace"; font-size: 10px; wrap: word-wrap; }
-                }
-            }
+        // Control Buttons
+        HorizontalBox {
+            spacing: 10px;
+            Button { text: "INSERT FILE"; clicked => { root.insert-external-data() } }
+            Button { text: "SAVE TO DISK"; clicked => { root.save-database() } }
         }
     }
 }
