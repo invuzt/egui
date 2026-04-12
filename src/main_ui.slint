@@ -1,92 +1,85 @@
-import { Button, CheckBox, ComboBox, Slider, LineEdit, VerticalBox, HorizontalBox, ScrollView, TabWidget } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Dynamic Showcase";
+    title: "Odfiz Crypto Miner Sim";
+    background: #0d0d0d;
     preferred-width: 400px;
-    preferred-height: 800px;
+    preferred-height: 850px;
 
-    // --- LOGIKA TEMA DINAMIS ---
-    in-out property <color> theme-bg: #f2f2f7;
-    in-out property <color> card-bg: #ffffff;
-    in-out property <color> accent-color: #007aff; // Default Blue (Cupertino)
-    in-out property <length> theme-radius: 12px;
-    in-out property <string> current-theme: "Cupertino";
+    in-out property <string> log-text: "[SYSTEM] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
+    in-out property <string> hashrate: "0.00 TH/s";
+    in-out property <string> balance: "0.00000000";
+    in-out property <float> progress: 0.0;
+    in-out property <bool> is-mining: false;
 
-    // Fungsi untuk ganti tema saat ComboBox berubah
-    function change-theme(name: string) {
-        root.current-theme = name;
-        if (name == "Cupertino") {
-            root.theme-bg = #f2f2f7;
-            root.accent-color = #007aff;
-            root.theme-radius = 12px;
-            root.card-bg = #ffffff;
-        } else if (name == "Material") {
-            root.theme-bg = #fafafa;
-            root.accent-color = #6200ee; // Purple Material
-            root.theme-radius = 4px;
-            root.card-bg = #ffffff;
-        } else { // Dark Mode
-            root.theme-bg = #1c1c1e;
-            root.accent-color = #ff9f43;
-            root.theme-radius = 16px;
-            root.card-bg = #2c2c2e;
-        }
-    }
-
-    background: root.theme-bg;
+    callback toggle-mining();
 
     VerticalBox {
         padding-top: 60px;
         padding-left: 20px;
         padding-right: 20px;
-        spacing: 20px;
+        spacing: 15px;
 
-        Text {
-            text: root.current-theme + " Mode";
-            font-size: 28px;
-            font-weight: 800;
-            color: root.current-theme == "Dark" ? white : black;
+        // Header Stats
+        Rectangle {
+            height: 120px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: #39ff14; // Green Neon
+
+            VerticalBox {
+                alignment: center;
+                Text { text: "MINING PROFITABILITY"; color: #888; font-size: 12px; }
+                Text { text: root.balance + " BTC"; color: #39ff14; font-size: 28px; font-weight: 800; }
+                Text { text: "HASHRATE: " + root.hashrate; color: #00d2ff; font-size: 14px; }
+            }
         }
 
-        // Dropdown Ganti Tema (REAL TIME!)
-        ComboBox {
-            model: ["Cupertino", "Material", "Dark"];
-            current-value: root.current-theme;
-            selected(val) => { root.change-theme(val) }
-        }
-
-        TabWidget {
-            Tab {
-                title: "Showcase";
+        // Live Graphic Simulation (Progress Bar)
+        VerticalBox {
+            spacing: 5px;
+            Text { text: "BLOCK DISCOVERY PROGRESS"; color: #555; font-size: 10px; }
+            Rectangle {
+                height: 10px; background: #222; border-radius: 5px;
                 Rectangle {
-                    background: root.card-bg;
-                    border-radius: root.theme-radius;
-                    VerticalBox {
-                        padding: 20px;
-                        spacing: 20px;
-                        
-                        Text { 
-                            text: "Dynamic Style"; 
-                            color: root.current-theme == "Dark" ? #cccccc : #8e8e93; 
-                        }
-
-                        // Tombol yang warnanya ikut tema
-                        Rectangle {
-                            height: 45px;
-                            background: root.accent-color;
-                            border-radius: root.theme-radius;
-                            Text { text: "Adaptive Button"; color: white; font-weight: 700; }
-                            TouchArea { clicked => { /* aksi */ } }
-                        }
-
-                        Slider { value: 40; }
-                        
-                        LineEdit { 
-                            placeholder-text: "Input field...";
-                        }
-                    }
+                    x: 0; width: parent.width * root.progress;
+                    background: #39ff14; border-radius: 5px;
+                    animate width { duration: 500ms; }
                 }
             }
+        }
+
+        // Terminal Log (Paling Penting buat kesan "Serius")
+        Rectangle {
+            background: #000;
+            border-radius: 8px;
+            height: 300px;
+            ScrollView {
+                padding: 10px;
+                Text { 
+                    text: root.log-text; 
+                    color: #00ff00; 
+                    font-family: "monospace"; 
+                    font-size: 11px; 
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        // Action Button
+        Button {
+            text: root.is-mining ? "STOP MINER" : "START MINING ENGINE";
+            primary: true;
+            height: 50px;
+            clicked => { root.toggle-mining() }
+        }
+
+        Text {
+            text: "ODFIZ CORE ENGINE v4.0 - TESTNET ONLY";
+            color: #444;
+            font-size: 10px;
+            horizontal-alignment: center;
         }
     }
 }
