@@ -1,12 +1,10 @@
-import { Button, CheckBox, ComboBox, Slider, LineEdit, StandardListView, TabWidget, GroupBox, VerticalBox, ScrollView } from "std-widgets.slint";
+import { Button, CheckBox, ComboBox, Slider, LineEdit, StandardListView, TabWidget, GroupBox, VerticalBox, ScrollView, ProgressIndicator } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Cupertino Gallery";
-    // Pakai tema cupertino secara eksplisit di sini jika didukung sistem, 
-    // atau biarkan default native mengaturnya.
+    title: "Odfiz Widget Gallery";
     preferred-width: 400px;
     preferred-height: 800px;
-    background: #f2f2f7; // Warna khas background iOS
+    background: #f2f2f7;
 
     ScrollView {
         VerticalBox {
@@ -14,66 +12,62 @@ export component AppWindow inherits Window {
             spacing: 15px;
 
             Text {
-                text: "Widget Gallery";
-                font-size: 28px;
+                text: "Slint Widget Gallery";
+                font-size: 26px;
                 font-weight: 800;
-                color: #000000;
+                color: #1c1c1e;
             }
 
-            // Bagian Tombol
             GroupBox {
-                title: "Buttons";
+                title: "Buttons & Interaction";
                 VerticalBox {
                     Button { text: "Regular Button"; }
                     Button { text: "Primary Button"; primary: true; }
+                    CheckBox { text: "Widgets Enabled"; checked: true; }
                 }
             }
 
-            // Input & Control
             GroupBox {
-                title: "Controls";
+                title: "Input & Selection";
                 VerticalBox {
                     spacing: 10px;
-                    CheckBox { text: "Widgets Enabled"; checked: true; }
+                    LineEdit { placeholder-text: "Type something here..."; }
                     ComboBox {
-                        model: ["Option 1", "Option 2", "Option 3"];
-                        current-value: "Select Something";
+                        model: ["Cupertino Style", "Material Style", "Native Style"];
+                        current-value: "Cupertino Style";
                     }
-                    Slider { value: 50; minimum: 0; maximum: 100; }
                 }
             }
 
-            // Text Input
             GroupBox {
-                title: "Input Fields";
+                title: "Indicators & Sliders";
                 VerticalBox {
-                    LineEdit { placeholder-text: "Enter some text..."; }
-                    LineEdit { placeholder-text: "Password"; input-type: password; }
+                    spacing: 15px;
+                    Text { text: "Progress: 65%"; color: #8e8e93; }
+                    ProgressIndicator { progress: 65%; }
+                    Slider { value: 42; minimum: 0; maximum: 100; }
                 }
             }
 
-            // Tabs
             GroupBox {
                 title: "Tab Navigation";
                 TabWidget {
                     Tab {
-                        title: "Tab 1";
+                        title: "Controls";
                         VerticalBox {
-                            alignment: center;
-                            Text { text: "Content of Tab 1"; horizontal-alignment: center; }
-                            Button { text: "Click Me"; }
+                            padding: 10px;
+                            Button { text: "Click in Tab 1"; }
                         }
                     }
                     Tab {
-                        title: "Tab 2";
-                        Text { text: "Content of Tab 2"; horizontal-alignment: center; }
-                    }
-                    Tab {
-                        title: "Tab 3";
-                        Text { text: "Content of Tab 3"; horizontal-alignment: center; }
+                        title: "Views";
+                        Text { text: "ListView content goes here."; padding: 10px; }
                     }
                 }
             }
+            
+            // Tambahkan jarak di bawah agar tidak mentok navigasi HP
+            Rectangle { height: 40px; }
         }
     }
 }
