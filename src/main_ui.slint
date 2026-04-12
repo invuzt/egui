@@ -14,12 +14,12 @@ component OdfizButton inherits Rectangle {
     in property <string> text;
     callback clicked();
     
-    background: touch.pressed ? OdfizTheme.accent-color.darker(20%) : (touch.has-hover ? OdfizTheme.accent-color.lighter(10%) : OdfizTheme.accent-color);
+    // Perbaikan: lighter() diganti brighter()
+    background: touch.pressed ? OdfizTheme.accent-color.darker(20%) : (touch.has-hover ? OdfizTheme.accent-color.brighter(10%) : OdfizTheme.accent-color);
     border-radius: 12px;
     height: 48px;
-    width: 220px; // Ukuran tetap agar mudah dirata tengah
+    width: 220px;
     
-    // Efek Feedback Animasi
     animate background { duration: 150ms; }
 
     txt := Text {
@@ -49,7 +49,7 @@ export component AppWindow inherits Window {
         VerticalBox {
             padding-top: OdfizTheme.status-bar-margin;
             padding-bottom: 10px;
-            alignment: center; // Rata tengah
+            alignment: center;
             Text {
                 text: "ODFIZ CORE";
                 font-size: 26px;
@@ -65,7 +65,6 @@ export component AppWindow inherits Window {
                 spacing: 20px;
                 padding-bottom: 20px;
 
-                // --- MAIN CONTROL CARD ---
                 Rectangle {
                     background: OdfizTheme.card-bg;
                     border-radius: 16px;
@@ -74,7 +73,6 @@ export component AppWindow inherits Window {
                         padding: 25px;
                         spacing: 18px;
                         
-                        // Label Status & Heading (H2/H3)
                         VerticalBox {
                             spacing: 4px;
                             padding: 0;
@@ -93,7 +91,6 @@ export component AppWindow inherits Window {
                             }
                         }
 
-                        // --- INPUT DATA (MENYESUAIKAN LEBAR) ---
                         VerticalBox {
                             spacing: 8px;
                             padding: 0;
@@ -102,7 +99,6 @@ export component AppWindow inherits Window {
                                 background: #252525;
                                 border-radius: 8px;
                                 height: 50px;
-                                // LineEdit otomatis mengisi lebar parent Rectangle
                                 input_field := LineEdit {
                                     placeholder-text: "Type here...";
                                     font-size: 15px;
@@ -112,9 +108,8 @@ export component AppWindow inherits Window {
                             }
                         }
 
-                        // --- TOMBOL RATA TENGAH ---
                         HorizontalBox {
-                            alignment: center; // Memaksa tombol ke tengah
+                            alignment: center;
                             OdfizButton {
                                 text: "EXECUTE PROCESS";
                                 clicked => { root.process-data(input_field.text) }
@@ -123,7 +118,6 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                // FOOTER / VERSION
                 Text {
                     text: "V.4.7 NATIVE ENGINE";
                     font-size: 10px;
