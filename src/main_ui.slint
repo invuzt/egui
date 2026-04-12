@@ -1,85 +1,155 @@
 import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
+// Komponen Terminal Khusus
+component TerminalView inherits Rectangle {
+    in property <string> text;
+    background: #000000;
+    border-radius: 8px;
+    
+    ScrollView {
+        padding: 10px;
+        Text { 
+            text: root.text; 
+            color: #00ff00; 
+            font-family: "monospace"; 
+            font-size: 12px; // Font agak diperbesar
+            wrap: word-wrap;
+        }
+    }
+}
+
 export component AppWindow inherits Window {
-    title: "Odfiz Crypto Miner Sim";
+    title: "Apk Penghasil Uang VROH";
     background: #0d0d0d;
     preferred-width: 400px;
     preferred-height: 850px;
 
-    in-out property <string> log-text: "[SYSTEM] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
-    in-out property <string> hashrate: "0.00 TH/s";
-    in-out property <string> balance: "0.00000000";
-    in-out property <float> progress: 0.0;
-    in-out property <bool> is-mining: false;
+    // Properti Dinamis
+    in-out property <string> log-text: "[SYS] Initializing nodes...\n[INFO] Connecting to Odfiz Pool...";
+    in-out property <string> balance: "0.00001245";
+    in-out property <string> running-stats: "HASHRATE: 45.12 TH/s | DIFFICULTY: 82.5T | REWARD: 3.125 BTC | NODES: 741";
+    in-out property <float> progress: 0.4;
+    in-out property <bool> is-mining: true;
 
+    // Timer Callback untuk Grafik & Teks Berjalan
+    callback tick();
     callback toggle-mining();
 
     VerticalBox {
         padding-top: 60px;
         padding-left: 20px;
         padding-right: 20px;
+        padding-bottom: 20px;
         spacing: 15px;
 
-        // Header Stats
-        Rectangle {
-            height: 120px;
-            background: #1a1a1a;
-            border-radius: 12px;
-            border-width: 1px;
-            border-color: #39ff14; // Green Neon
+        Text {
+            text: "Apk Penghasil Uang VROH";
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            horizontal-alignment: center;
+        }
 
-            VerticalBox {
-                alignment: center;
-                Text { text: "MINING PROFITABILITY"; color: #888; font-size: 12px; }
-                Text { text: root.balance + " BTC"; color: #39ff14; font-size: 28px; font-weight: 800; }
-                Text { text: "HASHRATE: " + root.hashrate; color: #00d2ff; font-size: 14px; }
+        // --- Headline Berjalan (Ticker) ---
+        Rectangle {
+            height: 30px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            clip: true; // Potong teks yang keluar area
+            
+            // Teks yang bergerak ke kiri
+            Text {
+                x: parent.width * 1.0; // Start dari kanan
+                text: root.running-stats;
+                color: #ff9f43;
+                font-size: 14px;
+                font-family: "monospace";
+                vertical-alignment: center;
+                
+                // Animasi Berjalan
+                animate x {
+                    duration: 10s; 
+                    easing: ease-in-out-quad;
+                    // Logika untuk loop animasi di lib.rs
+                }
             }
         }
 
-        // Live Graphic Simulation (Progress Bar)
+        // --- Stats Card (Besar & Rapi) ---
+        Rectangle {
+            height: 140px;
+            background: #16213e;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: #39ff14;
+
+            VerticalBox {
+                alignment: center;
+                padding: 15px;
+                Text { text: "MINING PROFITABILITY"; color: #bbbbbb; font-size: 14px; }
+                Text { 
+                    text: root.balance + " BTC"; 
+                    color: #39ff14; 
+                    font-size: 36px; // Font diperbesar
+                    font-weight: 800; 
+                }
+                Text { text: "LIVE UPDATE | TESTNET", color: #555, font-size: 11px }
+            }
+        }
+
+        // --- Live Graph Area (Simulasi) ---
+        Rectangle {
+            height: 100px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            Text { text: "LIVE HASHRATE GRAPH (SIM)"; color: #444; horizontal-alignment: center; vertical-alignment: center;}
+            
+            // Gambar Garis Naik Turun (Pakai Rectangle kecil yang bergeser)
+            Rectangle {
+                x: 0; width: parent.width * 0.9; height: 80px; y: 10px;
+                
+                Rectangle { x: 10%; y: 60%; width: 5px; height: 30px; background: #39ff14; }
+                Rectangle { x: 20%; y: 40%; width: 5px; height: 50px; background: #39ff14; }
+                Rectangle { x: 30%; y: 55%; width: 5px; height: 35px; background: #39ff14; }
+                Rectangle { x: 40%; y: 20%; width: 5px; height: 70px; background: #39ff14; }
+                Rectangle { x: 50%; y: 50%; width: 5px; height: 40px; background: #39ff14; }
+                Rectangle { x: 60%; y: 70%; width: 5px; height: 20px; background: #39ff14; }
+                Rectangle { x: 70%; y: 45%; width: 5px; height: 45px; background: #39ff14; }
+                Rectangle { x: 80%; y: 30%; width: 5px; height: 60px; background: #39ff14; }
+                // Grafik ini akan terlihat "berjalan" karena kita geser posisinya di lib.rs
+            }
+        }
+
         VerticalBox {
             spacing: 5px;
-            Text { text: "BLOCK DISCOVERY PROGRESS"; color: #555; font-size: 10px; }
+            Text { text: "BLOCK DISCOVERY PROGRESS"; color: #888; font-size: 11px; }
             Rectangle {
-                height: 10px; background: #222; border-radius: 5px;
+                height: 12px; background: #222; border-radius: 6px;
                 Rectangle {
                     x: 0; width: parent.width * root.progress;
-                    background: #39ff14; border-radius: 5px;
+                    background: #39ff14; border-radius: 6px;
                     animate width { duration: 500ms; }
                 }
             }
         }
 
-        // Terminal Log (Paling Penting buat kesan "Serius")
-        Rectangle {
-            background: #000;
-            border-radius: 8px;
-            height: 300px;
-            ScrollView {
-                padding: 10px;
-                Text { 
-                    text: root.log-text; 
-                    color: #00ff00; 
-                    font-family: "monospace"; 
-                    font-size: 11px; 
-                    wrap: word-wrap;
-                }
-            }
+        // --- Terminal View ---
+        TerminalView {
+            height: 200px;
+            text: root.log-text;
         }
 
-        // Action Button
+        // --- Button & Footer ---
         Button {
             text: root.is-mining ? "STOP MINER" : "START MINING ENGINE";
             primary: true;
-            height: 50px;
+            height: 55px;
             clicked => { root.toggle-mining() }
         }
 
         Text {
-            text: "ODFIZ CORE ENGINE v4.0 - TESTNET ONLY";
-            color: #444;
-            font-size: 10px;
-            horizontal-alignment: center;
+            text: "ODFIZ CORE v4.1 - TESTNET - @VROH";
+            color: #444; font-size: 11px; horizontal-alignment: center;
         }
     }
 }
