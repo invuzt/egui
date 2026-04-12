@@ -7,7 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Kita pakai versi 1.15.1 tapi biarkan default renderer agar tidak error draw_path
 slint = { version = "1.15.1", features = ["compat-1-2", "backend-android-activity-06"] }
 
 [build-dependencies]
