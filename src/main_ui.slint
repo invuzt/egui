@@ -1,59 +1,79 @@
-import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { Button, CheckBox, ComboBox, Slider, LineEdit, StandardListView, TabWidget, GroupBox, VerticalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Data Engine v3";
-    background: #1a1a2e;
-    width: 400px;
-    height: 750px;
+    title: "Odfiz Cupertino Gallery";
+    // Pakai tema cupertino secara eksplisit di sini jika didukung sistem, 
+    // atau biarkan default native mengaturnya.
+    preferred-width: 400px;
+    preferred-height: 800px;
+    background: #f2f2f7; // Warna khas background iOS
 
-    callback insert-external-data();
-    callback search-data(string);
-    callback save-database();
-    
-    in-out property <string> status: "Engine Ready";
-    in-out property <string> preview: "No data in RAM";
-    in-out property <int> total-data: 0;
-
-    VerticalBox {
-        padding: 20px;
-        spacing: 15px;
-
-        Text { text: "ODFIZ DATA CONTROLLER"; color: #ff9f43; font-weight: 800; horizontal-alignment: center; }
-
-        Rectangle {
-            height: 80px; background: #16213e; border-radius: 10px;
-            VerticalBox {
-                alignment: center;
-                Text { text: "Total Data loaded: " + root.total-data; color: #00d2ff; font-weight: 700; }
-                Text { text: root.status; color: #4cd137; font-size: 11px; }
-            }
-        }
-
+    ScrollView {
         VerticalBox {
-            spacing: 8px;
-            Text { text: "Cari ID atau Nama:"; color: white; }
-            input := TextInput { font-size: 16px; color: #00ff00; }
-            Button { text: "CARI INSTAN"; primary: true; clicked => { root.search-data(input.text) } }
-        }
+            padding: 20px;
+            spacing: 15px;
 
-        Rectangle {
-            background: #0f3460; border-radius: 8px; height: 150px;
-            ScrollView {
-                padding: 10px; // Padding dipindah ke sini
-                Text { 
-                    text: root.preview; 
-                    color: #eeeeee; 
-                    font-family: "monospace"; 
-                    font-size: 11px;
-                    wrap: word-wrap;
+            Text {
+                text: "Widget Gallery";
+                font-size: 28px;
+                font-weight: 800;
+                color: #000000;
+            }
+
+            // Bagian Tombol
+            GroupBox {
+                title: "Buttons";
+                VerticalBox {
+                    Button { text: "Regular Button"; }
+                    Button { text: "Primary Button"; primary: true; }
                 }
             }
-        }
 
-        HorizontalBox {
-            spacing: 10px;
-            Button { text: "INSERT FILE"; clicked => { root.insert-external-data() } }
-            Button { text: "SAVE TO DISK"; clicked => { root.save-database() } }
+            // Input & Control
+            GroupBox {
+                title: "Controls";
+                VerticalBox {
+                    spacing: 10px;
+                    CheckBox { text: "Widgets Enabled"; checked: true; }
+                    ComboBox {
+                        model: ["Option 1", "Option 2", "Option 3"];
+                        current-value: "Select Something";
+                    }
+                    Slider { value: 50; minimum: 0; maximum: 100; }
+                }
+            }
+
+            // Text Input
+            GroupBox {
+                title: "Input Fields";
+                VerticalBox {
+                    LineEdit { placeholder-text: "Enter some text..."; }
+                    LineEdit { placeholder-text: "Password"; input-type: password; }
+                }
+            }
+
+            // Tabs
+            GroupBox {
+                title: "Tab Navigation";
+                TabWidget {
+                    Tab {
+                        title: "Tab 1";
+                        VerticalBox {
+                            alignment: center;
+                            Text { text: "Content of Tab 1"; horizontal-alignment: center; }
+                            Button { text: "Click Me"; }
+                        }
+                    }
+                    Tab {
+                        title: "Tab 2";
+                        Text { text: "Content of Tab 2"; horizontal-alignment: center; }
+                    }
+                    Tab {
+                        title: "Tab 3";
+                        Text { text: "Content of Tab 3"; horizontal-alignment: center; }
+                    }
+                }
+            }
         }
     }
 }
