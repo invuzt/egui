@@ -9,22 +9,13 @@ export global OdfizTheme {
     in property <length> safe-area-top: 65px;
 }
 
-component OdfizButton inherits Rectangle {
-    in property <string> text;
-    callback clicked();
-    background: touch.pressed ? OdfizTheme.accent-color.darker(10%) : OdfizTheme.accent-color;
-    border-radius: 25px;
-    height: 45px;
-    width: 180px;
-    animate background { duration: 150ms; }
-    Text { text: root.text; color: white; font-weight: 800; }
-    touch := TouchArea { clicked => { root.clicked() } }
-}
-
 export component AppWindow inherits Window {
-    title: "Odfiz Native Processor";
+    title: "Odfiz Native Core";
     background: OdfizTheme.bg-outer;
-    in-out property <string> status-text: "ready to process...";
+    default-font-family: "monospace"; // Seragamkan semua font
+    
+    // Properti status-text sekarang menampung seluruh history
+    in-out property <string> log-history: "System initialized...";
     callback process-data(string);
 
     ScrollView {
@@ -35,7 +26,40 @@ export component AppWindow inherits Window {
             padding-top: OdfizTheme.safe-area-top;
             spacing: 15px;
 
-            // AREA INPUT
+            // 1. TERMINAL LOG (SEKARANG DI ATAS)
+            Rectangle {
+                background: OdfizTheme.terminal-bg;
+                border-radius: 12px;
+                height: 250px; // Dibuat lebih tinggi buat history
+                clip: true;
+
+                VerticalBox {
+                    padding: 12px;
+                    spacing: 8px;
+                    
+                    HorizontalBox {
+                        alignment: start;
+                        spacing: 6px;
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
+                    }
+
+                    ScrollView {
+                        viewport-height: log-content.preferred-height;
+                        log-content := TextInput {
+                            text: root.log-history;
+                            font-size: 13px;
+                            color: OdfizTheme.terminal-text;
+                            read-only: true;
+                            wrap: word-wrap;
+                            single-line: false;
+                        }
+                    }
+                }
+            }
+
+            // 2. AREA INPUT (DI BAWAH TERMINAL)
             Rectangle {
                 background: OdfizTheme.card-bg;
                 border-radius: 20px;
@@ -47,58 +71,27 @@ export component AppWindow inherits Window {
                     padding: 20px;
                     spacing: 15px;
                     input_field := LineEdit {
-                        placeholder-text: "Input command...";
+                        placeholder-text: "Enter data...";
                         height: 45px;
+                        font-size: 15px;
                     }
                     HorizontalBox {
                         alignment: center;
-                        OdfizButton {
-                            text: "RUN ENGINE";
-                            clicked => { root.process-data(input_field.text) }
-                        }
-                    }
-                }
-            }
-
-            // AREA TERMINAL (MENGGUNAKAN TEXTINPUT BIAR WARNA NURUT)
-            Rectangle {
-                background: OdfizTheme.terminal-bg;
-                border-radius: 12px;
-                height: 200px;
-                clip: true; // Biar teks gak luber keluar kotak
-
-                VerticalBox {
-                    padding: 12px;
-                    spacing: 8px;
-                    
-                    // Header Bulatan Terminal
-                    HorizontalBox {
-                        alignment: start;
-                        spacing: 6px;
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #ff5f56; }
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #ffbd2e; }
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #27c93f; }
-                    }
-
-                    // ScrollView buat isi log biar bisa di-scroll dan select
-                    ScrollView {
-                        viewport-height: log-content.preferred-height;
-                        log-content := TextInput {
-                            text: "➜ odfiz-core git:(main) ✗ \n" + root.status-text;
-                            font-family: "monospace";
-                            font-size: 13px;
-                            color: OdfizTheme.terminal-text; // DI SINI JALAN!
-                            read-only: true;
-                            wrap: word-wrap;
-                            single-line: false;
+                        Rectangle {
+                            background: OdfizTheme.accent-color;
+                            border-radius: 22px;
+                            height: 44px;
+                            width: 180px;
+                            Text { text: "EXECUTE"; color: white; font-weight: 800; }
+                            TouchArea { clicked => { root.process-data(input_field.text) } }
                         }
                     }
                 }
             }
 
             Text {
-                text: "ODFIZ NATIVE CORE V.4.9";
-                font-size: 10px;
+                text: "ODFIZ NATIVE CORE V.5.0";
+                font-size: 11px;
                 color: #555;
                 horizontal-alignment: center;
             }

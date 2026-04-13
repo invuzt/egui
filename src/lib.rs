@@ -6,18 +6,25 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
+    // Variable untuk menyimpan history log selama aplikasi jalan
+    let mut history = String::from("--- ODFIZ TERMINAL SESSION ---\n");
+
     ui.on_process_data(move |input| {
         if let Some(ui) = ui_handle.upgrade() {
             let data = input.to_string();
-            let processed = if data.is_empty() {
-                "INPUT EMPTY, VROH!".to_string()
+            let timestamp = "log: "; // Sederhana tanpa unicode
+            
+            let new_entry = if data.is_empty() {
+                format!("{}[EMPTY INPUT]\n", timestamp)
             } else {
-                format!("SUCCESS: {}", data.to_uppercase())
+                format!("{}SUCCESS -> {}\n", timestamp, data.to_uppercase())
             };
             
-            // PERBAIKAN: Ganti set_result_display menjadi set_status_text
-            // Sesuai dengan nama property di main_ui.slint
-            ui.set_status_text(processed.into());
+            // Tambahkan data baru ke history yang sudah ada
+            history.push_str(&new_entry);
+            
+            // Update UI dengan history terbaru
+            ui.set_log_history(history.clone().into());
         }
     });
 
