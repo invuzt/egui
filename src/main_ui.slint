@@ -1,14 +1,14 @@
 import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit, TextEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
-    in property <color> bg-outer: #C0C4CC;      // Abu-abu solid agar status bar jelas
+    in property <color> bg-outer: #C0C4CC;
     in property <color> card-bg: #ffffff;
-    in property <color> terminal-bg: #1a1b26;   // Warna Tokyo Night / ZSH
+    in property <color> terminal-bg: #1a1b26;
     in property <color> accent-color: #ff4d6d;
     in property <color> text-primary: #1c1e21;
-    in property <color> prompt-color: #7aa2f7;   // Biru ZSH
-    in property <color> path-color: #9ece6a;     // Hijau ZSH
-    in property <length> safe-area-top: 60px;    // Biar gak mepet status bar
+    in property <color> prompt-color: #7aa2f7;
+    in property <color> path-color: #9ece6a;
+    in property <length> safe-area-top: 60px;
 }
 
 component OdfizButton inherits Rectangle {
@@ -34,10 +34,9 @@ export component AppWindow inherits Window {
         
         main-layout := VerticalBox {
             padding: 20px;
-            padding-top: OdfizTheme.safe-area-top; // Jarak aman status bar
+            padding-top: OdfizTheme.safe-area-top;
             spacing: 15px;
 
-            // CARD INPUT (Putih Clean)
             Rectangle {
                 background: OdfizTheme.card-bg;
                 border-radius: 20px;
@@ -63,7 +62,6 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // TERMINAL LOG (ZSH Style - Selectable)
             Rectangle {
                 background: OdfizTheme.terminal-bg;
                 border-radius: 12px;
@@ -75,7 +73,6 @@ export component AppWindow inherits Window {
                     padding: 12px;
                     spacing: 5px;
                     
-                    // Header Terminal Palsu
                     HorizontalBox {
                         alignment: start;
                         spacing: 6px;
@@ -84,13 +81,13 @@ export component AppWindow inherits Window {
                         Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #27c93f; }
                     }
 
-                    // Area Teks Log (Bisa di-select)
                     TextEdit {
                         text: "➜  " + "odfiz-core " + "git:(main) ✗ " + root.status-text;
                         font-family: "monospace";
                         font-size: 13px;
-                        color: #a9b1d6;
-                        read-only: true; // Biar user gak bisa ngetik di sini, tapi bisa copy
+                        // PERBAIKAN: Ganti 'color' menjadi 'text-color'
+                        text-color: #a9b1d6;
+                        read-only: true;
                         wrap: word-wrap;
                     }
                 }
