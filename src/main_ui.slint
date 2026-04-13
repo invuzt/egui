@@ -1,12 +1,12 @@
 import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
-    in property <color> bg-color: #F0F2F5;       // Abu-abu sangat muda (bersih)
-    in property <color> card-bg: #ffffff;       // Putih bersih
-    in property <color> accent-color: #ff4d6d;  // Tetap pakai pink-merah Odfiz biar kontras
-    in property <color> text-primary: #1c1e21;  // Hitam pekat buat teks
+    in property <color> bg-outer: #d1d5db;      // Abu-abu lebih gelap agar status bar kontras
+    in property <color> card-bg: #ffffff;
+    in property <color> accent-color: #ff4d6d;
+    in property <color> text-primary: #1c1e21;
     in property <color> text-secondary: #606770;
-    in property <color> status-green: #28a745;   // Hijau yang lebih "ramah" mata
+    in property <color> status-green: #28a745;
     in property <length> status-bar-margin: 35px;
 }
 
@@ -14,7 +14,7 @@ component OdfizButton inherits Rectangle {
     in property <string> text;
     callback clicked();
     background: touch.pressed ? OdfizTheme.accent-color.darker(10%) : OdfizTheme.accent-color;
-    border-radius: 25px; // Kita buat lebih bulat biar modern (Capsule)
+    border-radius: 25px;
     height: 45px;
     width: 200px;
     animate background { duration: 150ms; }
@@ -29,92 +29,66 @@ component OdfizButton inherits Rectangle {
 }
 
 export component AppWindow inherits Window {
-    title: "Odfiz Core Light";
-    background: OdfizTheme.bg-color;
+    title: "Odfiz Processor";
+    background: OdfizTheme.bg-outer; // Background luar lebih gelap
     in-out property <string> status-text: "SYSTEM ONLINE";
     callback process-data(string);
 
-    VerticalBox {
-        padding-left: 20px;
-        padding-right: 20px;
-        spacing: 0;
-
-        // HEADER
-        VerticalBox {
+    // ScrollView adalah kunci agar UI bisa naik/digeser saat keyboard muncul
+    ScrollView {
+        viewport-height: main-layout.preferred-height;
+        
+        main-layout := VerticalBox {
+            padding: 20px;
             padding-top: OdfizTheme.status-bar-margin;
-            padding-bottom: 20px;
-            alignment: center;
-            Text {
-                text: "ODFIZ CORE";
-                font-size: 24px;
-                font-weight: 900;
-                color: OdfizTheme.accent-color;
-                letter-spacing: 2px;
-            }
-        }
+            spacing: 20px;
+            alignment: start;
 
-        ScrollView {
-            VerticalBox {
-                spacing: 20px;
-                
-                // CARD UTAMA
-                Rectangle {
-                    background: OdfizTheme.card-bg;
-                    border-radius: 20px;
-                    drop-shadow-blur: 10px;
-                    drop-shadow-color: #00000015; // Shadow tipis biar elegan
+            // CARD UTAMA: Langsung fokus ke Status dan Input
+            Rectangle {
+                background: OdfizTheme.card-bg;
+                border-radius: 20px;
+                drop-shadow-blur: 15px;
+                drop-shadow-color: #00000020;
 
-                    VerticalBox {
-                        padding: 25px;
-                        spacing: 20px;
-                        
-                        // Status & Label
-                        VerticalBox {
-                            spacing: 5px;
-                            Text { 
-                                text: root.status-text; 
-                                font-size: 12px; 
-                                font-weight: 800; 
-                                color: OdfizTheme.status-green; 
-                                wrap: word-wrap;
-                            }
-                            Text { 
-                                text: "Core Processor Engine"; 
-                                font-size: 18px; 
-                                font-weight: 700; 
-                                color: OdfizTheme.text-primary; 
-                            }
-                        }
+                VerticalBox {
+                    padding: 25px;
+                    spacing: 20px;
+                    
+                    // Status Text (Sekarang paling atas dan bisa wrap)
+                    Text { 
+                        text: root.status-text; 
+                        font-size: 13px; 
+                        font-weight: 800; 
+                        color: OdfizTheme.status-green; 
+                        wrap: word-wrap;
+                        horizontal-alignment: left;
+                    }
 
-                        // INPUT AREA
-                        VerticalBox {
-                            spacing: 8px;
-                            Text { text: "INPUT DATA"; font-size: 11px; color: OdfizTheme.text-secondary; font-weight: 700; }
-                            
-                            // Di Light Mode, LineEdit standar sudah otomatis bagus kontrasnya
-                            input_field := LineEdit {
-                                placeholder-text: "Type something here...";
-                                font-size: 16px;
-                                height: 45px;
-                            }
-                        }
+                    // INPUT AREA (Tanpa label tambahan, langsung ke intinya)
+                    input_field := LineEdit {
+                        placeholder-text: "Ketik data di sini...";
+                        font-size: 16px;
+                        height: 50px;
+                        // LineEdit otomatis fokus dan keyboard muncul di Android
+                    }
 
-                        HorizontalBox {
-                            alignment: center;
-                            OdfizButton {
-                                text: "RUN PROCESS";
-                                clicked => { root.process-data(input_field.text) }
-                            }
+                    HorizontalBox {
+                        alignment: center;
+                        OdfizButton {
+                            text: "RUN PROCESS";
+                            clicked => { root.process-data(input_field.text) }
                         }
                     }
                 }
+            }
 
-                Text {
-                    text: "V.4.7 LIGHT VERSION";
-                    font-size: 11px;
-                    color: OdfizTheme.text-secondary;
-                    horizontal-alignment: center;
-                }
+            // Keterangan versi taruh di bawah
+            Text {
+                text: "ODFIZ NATIVE V.4.7";
+                font-size: 10px;
+                color: #666;
+                horizontal-alignment: center;
             }
         }
     }
