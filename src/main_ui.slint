@@ -1,13 +1,14 @@
-import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
+import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit, TextEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
-    in property <color> bg-outer: #d1d5db;      // Abu-abu lebih gelap agar status bar kontras
+    in property <color> bg-outer: #C0C4CC;      // Abu-abu solid agar status bar jelas
     in property <color> card-bg: #ffffff;
+    in property <color> terminal-bg: #1a1b26;   // Warna Tokyo Night / ZSH
     in property <color> accent-color: #ff4d6d;
     in property <color> text-primary: #1c1e21;
-    in property <color> text-secondary: #606770;
-    in property <color> status-green: #28a745;
-    in property <length> status-bar-margin: 35px;
+    in property <color> prompt-color: #7aa2f7;   // Biru ZSH
+    in property <color> path-color: #9ece6a;     // Hijau ZSH
+    in property <length> safe-area-top: 60px;    // Biar gak mepet status bar
 }
 
 component OdfizButton inherits Rectangle {
@@ -16,78 +17,89 @@ component OdfizButton inherits Rectangle {
     background: touch.pressed ? OdfizTheme.accent-color.darker(10%) : OdfizTheme.accent-color;
     border-radius: 25px;
     height: 45px;
-    width: 200px;
+    width: 180px;
     animate background { duration: 150ms; }
-    
-    txt := Text {
-        text: root.text;
-        color: white;
-        font-weight: 800;
-        font-size: 14px;
-    }
+    Text { text: root.text; color: white; font-weight: 800; }
     touch := TouchArea { clicked => { root.clicked() } }
 }
 
 export component AppWindow inherits Window {
-    title: "Odfiz Processor";
-    background: OdfizTheme.bg-outer; // Background luar lebih gelap
-    in-out property <string> status-text: "SYSTEM ONLINE";
+    title: "Odfiz Native Processor";
+    background: OdfizTheme.bg-outer;
+    in-out property <string> status-text: "ready to process...";
     callback process-data(string);
 
-    // ScrollView adalah kunci agar UI bisa naik/digeser saat keyboard muncul
     ScrollView {
         viewport-height: main-layout.preferred-height;
         
         main-layout := VerticalBox {
             padding: 20px;
-            padding-top: OdfizTheme.status-bar-margin;
-            spacing: 20px;
-            alignment: start;
+            padding-top: OdfizTheme.safe-area-top; // Jarak aman status bar
+            spacing: 15px;
 
-            // CARD UTAMA: Langsung fokus ke Status dan Input
+            // CARD INPUT (Putih Clean)
             Rectangle {
                 background: OdfizTheme.card-bg;
                 border-radius: 20px;
+                height: 160px;
                 drop-shadow-blur: 15px;
-                drop-shadow-color: #00000020;
+                drop-shadow-color: #00000015;
 
                 VerticalBox {
-                    padding: 25px;
-                    spacing: 20px;
-                    
-                    // Status Text (Sekarang paling atas dan bisa wrap)
-                    Text { 
-                        text: root.status-text; 
-                        font-size: 13px; 
-                        font-weight: 800; 
-                        color: OdfizTheme.status-green; 
-                        wrap: word-wrap;
-                        horizontal-alignment: left;
-                    }
-
-                    // INPUT AREA (Tanpa label tambahan, langsung ke intinya)
+                    padding: 20px;
+                    spacing: 15px;
                     input_field := LineEdit {
-                        placeholder-text: "Ketik data di sini...";
+                        placeholder-text: "Input command or data...";
                         font-size: 16px;
-                        height: 50px;
-                        // LineEdit otomatis fokus dan keyboard muncul di Android
+                        height: 45px;
                     }
-
                     HorizontalBox {
                         alignment: center;
                         OdfizButton {
-                            text: "RUN PROCESS";
+                            text: "RUN ENGINE";
                             clicked => { root.process-data(input_field.text) }
                         }
                     }
                 }
             }
 
-            // Keterangan versi taruh di bawah
+            // TERMINAL LOG (ZSH Style - Selectable)
+            Rectangle {
+                background: OdfizTheme.terminal-bg;
+                border-radius: 12px;
+                height: 200px;
+                border-width: 1px;
+                border-color: #32344a;
+
+                VerticalBox {
+                    padding: 12px;
+                    spacing: 5px;
+                    
+                    // Header Terminal Palsu
+                    HorizontalBox {
+                        alignment: start;
+                        spacing: 6px;
+                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #ff5f56; }
+                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #ffbd2e; }
+                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #27c93f; }
+                    }
+
+                    // Area Teks Log (Bisa di-select)
+                    TextEdit {
+                        text: "➜  " + "odfiz-core " + "git:(main) ✗ " + root.status-text;
+                        font-family: "monospace";
+                        font-size: 13px;
+                        color: #a9b1d6;
+                        read-only: true; // Biar user gak bisa ngetik di sini, tapi bisa copy
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
             Text {
-                text: "ODFIZ NATIVE V.4.7";
+                text: "ODFIZ NATIVE CORE V.4.8";
                 font-size: 10px;
-                color: #666;
+                color: #555;
                 horizontal-alignment: center;
             }
         }
