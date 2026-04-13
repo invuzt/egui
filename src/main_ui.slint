@@ -1,14 +1,12 @@
-import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit, TextEdit } from "std-widgets.slint";
+import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
 
 export global OdfizTheme {
     in property <color> bg-outer: #C0C4CC;
     in property <color> card-bg: #ffffff;
     in property <color> terminal-bg: #1a1b26;
     in property <color> accent-color: #ff4d6d;
-    in property <color> text-primary: #1c1e21;
-    in property <color> prompt-color: #7aa2f7;
-    in property <color> path-color: #9ece6a;
-    in property <length> safe-area-top: 60px;
+    in property <color> terminal-text: #a9b1d6;
+    in property <length> safe-area-top: 65px;
 }
 
 component OdfizButton inherits Rectangle {
@@ -37,10 +35,11 @@ export component AppWindow inherits Window {
             padding-top: OdfizTheme.safe-area-top;
             spacing: 15px;
 
+            // AREA INPUT
             Rectangle {
                 background: OdfizTheme.card-bg;
                 border-radius: 20px;
-                height: 160px;
+                height: 150px;
                 drop-shadow-blur: 15px;
                 drop-shadow-color: #00000015;
 
@@ -48,8 +47,7 @@ export component AppWindow inherits Window {
                     padding: 20px;
                     spacing: 15px;
                     input_field := LineEdit {
-                        placeholder-text: "Input command or data...";
-                        font-size: 16px;
+                        placeholder-text: "Input command...";
                         height: 45px;
                     }
                     HorizontalBox {
@@ -62,39 +60,44 @@ export component AppWindow inherits Window {
                 }
             }
 
+            // AREA TERMINAL (MENGGUNAKAN TEXTINPUT BIAR WARNA NURUT)
             Rectangle {
                 background: OdfizTheme.terminal-bg;
                 border-radius: 12px;
                 height: 200px;
-                border-width: 1px;
-                border-color: #32344a;
+                clip: true; // Biar teks gak luber keluar kotak
 
                 VerticalBox {
                     padding: 12px;
-                    spacing: 5px;
+                    spacing: 8px;
                     
+                    // Header Bulatan Terminal
                     HorizontalBox {
                         alignment: start;
                         spacing: 6px;
-                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #ff5f56; }
-                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #ffbd2e; }
-                        Rectangle { width: 10px; height: 10px; border-radius: 5px; background: #27c93f; }
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #ff5f56; }
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #ffbd2e; }
+                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #27c93f; }
                     }
 
-                    TextEdit {
-                        text: "➜  " + "odfiz-core " + "git:(main) ✗ " + root.status-text;
-                        font-family: "monospace";
-                        font-size: 13px;
-                        // PERBAIKAN: Ganti 'color' menjadi 'text-color'
-                        text-color: #a9b1d6;
-                        read-only: true;
-                        wrap: word-wrap;
+                    // ScrollView buat isi log biar bisa di-scroll dan select
+                    ScrollView {
+                        viewport-height: log-content.preferred-height;
+                        log-content := TextInput {
+                            text: "➜ odfiz-core git:(main) ✗ \n" + root.status-text;
+                            font-family: "monospace";
+                            font-size: 13px;
+                            color: OdfizTheme.terminal-text; // DI SINI JALAN!
+                            read-only: true;
+                            wrap: word-wrap;
+                            single-line: false;
+                        }
                     }
                 }
             }
 
             Text {
-                text: "ODFIZ NATIVE CORE V.4.8";
+                text: "ODFIZ NATIVE CORE V.4.9";
                 font-size: 10px;
                 color: #555;
                 horizontal-alignment: center;
