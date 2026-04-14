@@ -9,6 +9,7 @@ struct Node {
     vel: egui::Vec2,
 }
 
+#[derive(Clone)]
 struct Link {
     from: String,
     to: String,
@@ -66,15 +67,13 @@ impl eframe::App for OdfizApp {
                 ui.heading("ODFIZ NETWORK SIMULATOR");
 
                 ui.horizontal_wrapped(|ui| {
-                    if ui.button("🌐 ADD NODE").clicked() {
-                        self.add_node("SERVER");
-                    }
+                    if ui.button("🌐 ADD NODE").clicked() { self.add_node("NET"); }
                     if ui.button("⚡ CONNECT ALL").clicked() {
                         if let Ok(mut data) = self.state.try_lock() {
                             for l in data.links.iter_mut() { l.is_active = true; }
                         }
                     }
-                    if ui.button("💀 BREAK LINKS").clicked() {
+                    if ui.button("💀 BREAK").clicked() {
                         if let Ok(mut data) = self.state.try_lock() {
                             for l in data.links.iter_mut() { l.is_active = false; }
                         }
@@ -83,7 +82,6 @@ impl eframe::App for OdfizApp {
 
                 ui.separator();
 
-                // AREA INTERAKSI
                 let (rect, response) = ui.allocate_at_least(ui.available_size(), egui::Sense::click_and_drag());
                 let painter = ui.painter_at(rect);
                 let center = rect.center();
@@ -92,18 +90,19 @@ impl eframe::App for OdfizApp {
                 if let Ok(mut data) = self.state.try_lock() {
                     let names: Vec<String> = data.nodes.keys().cloned().collect();
 
-                    // --- LOGIKA DRAG & TOUCH ---
+                    // --- TOUCH INTERACTION ---
                     if response.drag_started() {
                         if let Some(pos) = mouse_pos {
                             for name in &names {
-                                if (data.nodes[name].pos - pos).length() < 30.0 {
+                                if (data.nodes[name].pos - pos).length() < 35.0 {
                                     self.drag_node = Some(name.clone());
                                     break;
                                 }
                             }
                         }
                     }
-                    if response.drag_released() { self.drag_node = None; }
+                    // FIX: Pakas drag_stopped sesuai warning compiler
+                    if response.drag_stopped() { self.drag_node = None; }
 
                     if let Some(ref name) = self.drag_node {
                         if let Some(pos) = mouse_pos {
@@ -114,7 +113,7 @@ impl eframe::App for OdfizApp {
                         }
                     }
 
-                    // --- PHYSICS ---
+                    // --- PHYSICS: REPULSION ---
                     for i in 0..names.len() {
                         for j in (i + 1)..names.len() {
                             let pos_i = data.nodes[&names[i]].pos;
@@ -126,30 +125,30 @@ impl eframe::App for OdfizApp {
                         }
                     }
 
-                    for link in &data.links {
-                        if let (Some(n1), Some(n2)) = (data.nodes.get(&link.from), data.nodes.get(&link.to)) {
-                            let diff = n2.pos - n1.pos;
+                    // --- PHYSICS: SPRING & GLOW ---
+                    let links_to_process = data.links.clone(); // CLONE DISINI buat bypass borrow checker
+                    for link in links_to_process {
+                        if data.nodes.contains_key(&link.from) && data.nodes.contains_key(&link.to) {
+                            let pos1 = data.nodes[&link.from].pos;
+                            let pos2 = data.nodes[&link.to].pos;
+                            let diff = pos2 - pos1;
                             let dist = diff.length().max(1.0);
-                            
-                            // Visual Garis
+
                             if link.is_active {
-                                // Efek Glow: Warna berubah-ubah & ketebalan berdenyut
                                 let pulse = (time * 5.0).sin() as f32 * 0.5 + 0.5;
                                 let color = egui::Color32::from_rgb(0, 255, 200);
-                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(2.0 + pulse * 2.0, color.gamma_multiply(0.3 + pulse * 0.4)));
-                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(1.0, color));
+                                painter.line_segment([pos1, pos2], egui::Stroke::new(2.5 + pulse * 2.0, color.gamma_multiply(0.2 + pulse * 0.3)));
+                                painter.line_segment([pos1, pos2], egui::Stroke::new(1.0, color));
                                 
-                                // Gaya tarik (Spring) hanya aktif jika kabel nyambung
-                                let force = diff * (dist - 120.0) * 0.08;
+                                let spring_force = diff * (dist - 120.0) * 0.08;
                                 if self.drag_node.as_ref() != Some(&link.from) {
-                                    data.nodes.get_mut(&link.from).unwrap().vel += force * dt;
+                                    data.nodes.get_mut(&link.from).unwrap().vel += spring_force * dt;
                                 }
                                 if self.drag_node.as_ref() != Some(&link.to) {
-                                    data.nodes.get_mut(&link.to).unwrap().vel -= force * dt;
+                                    data.nodes.get_mut(&link.to).unwrap().vel -= spring_force * dt;
                                 }
                             } else {
-                                // Kabel Putus: Abu-abu & melar (tidak ada gaya tarik)
-                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(1.0, egui::Color32::from_gray(60)));
+                                painter.line_segment([pos1, pos2], egui::Stroke::new(1.0, egui::Color32::from_gray(60)));
                             }
                         }
                     }
@@ -161,7 +160,7 @@ impl eframe::App for OdfizApp {
                             node.vel *= 0.91;
                             node.pos += node.vel;
                         }
-                        painter.circle_filled(node.pos, 18.0, egui::Color32::from_rgb(40, 40, 40));
+                        painter.circle_filled(node.pos, 18.0, egui::Color32::from_rgb(30, 30, 30));
                         painter.circle_stroke(node.pos, 18.0, egui::Stroke::new(2.0, egui::Color32::WHITE));
                         painter.text(node.pos, egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(10.0), egui::Color32::WHITE);
                     }
@@ -181,7 +180,6 @@ impl OdfizApp {
                 pos: egui::pos2(rand::random::<f32>() * 300.0, 300.0),
                 vel: egui::Vec2::ZERO,
             });
-            // Hubungkan otomatis ke node sebelumnya jika ada
             if id > 0 {
                 let prev = format!("{}-{}", prefix, id - 1);
                 data.links.push(Link { from: prev, to: name, is_active: true });
