@@ -67,7 +67,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
             setup_custom_fonts(&cc.egui_ctx);
             Box::new(OdfizApp { 
                 state, 
-                input_text: String::new() 
+                input_buffer: String::new() 
             })
         }),
     );
@@ -83,7 +83,7 @@ fn setup_custom_fonts(ctx: &egui::Context) {
 
 struct OdfizApp {
     state: Arc<Mutex<AppState>>,
-    input_text: String,
+    input_buffer: String,
 }
 
 impl eframe::App for OdfizApp {
@@ -92,31 +92,43 @@ impl eframe::App for OdfizApp {
         let dt = ctx.input(|i| i.stable_dt).min(0.1); 
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.add_space(10.0);
             ui.vertical_centered(|ui| {
-                ui.add_space(10.0);
                 ui.heading(egui::RichText::new("ODFIZ GRAPH CORE").strong().extra_letter_spacing(1.0));
                 
-                ui.horizontal(|ui| {
-                    let text_res = ui.add(egui::TextEdit::singleline(&mut self.input_text)
-                        .hint_text("Ketik kata..."));
-                    
-                    if ui.button("ADD").clicked() || (text_res.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
-                        if !self.input_text.is_empty() {
-                            if let Ok(mut data) = self.state.try_lock() {
-                                let name = self.input_text.clone();
-                                let center = ui.max_rect().center();
-                                data.nodes.entry(name).or_insert(Node {
-                                    pos: center + egui::vec2(rand::random::<f32>() * 10.0, rand::random::<f32>() * 10.0),
-                                    vel: egui::Vec2::ZERO,
-                                });
-                                self.input_text.clear();
+                // --- DISPLAY INPUT ---
+                ui.group(|ui| {
+                    ui.set_width(ui.available_width());
+                    ui.label(egui::RichText::new(&self.input_buffer).size(24.0).color(egui::Color32::LIGHT_BLUE));
+                    if self.input_buffer.is_empty() { ui.label("Pilih huruf..."); }
+                });
+
+                // --- VIRTUAL KEYBOARD (PILIHAN) ---
+                ui.group(|ui| {
+                    let keys = vec!["A", "B", "C", "RUST", "CORE", "ODFIZ", "1", "2"];
+                    ui.horizontal_wrapped(|ui| {
+                        for key in keys {
+                            if ui.button(egui::RichText::new(key).size(18.0)).clicked() {
+                                if let Ok(mut data) = self.state.try_lock() {
+                                    let center = ui.max_rect().center();
+                                    data.nodes.entry(key.to_string()).or_insert(Node {
+                                        pos: center + egui::vec2(rand::random::<f32>() * 10.0, rand::random::<f32>() * 10.0),
+                                        vel: egui::Vec2::ZERO,
+                                    });
+                                }
                             }
                         }
-                    }
+                        if ui.button(egui::RichText::new("❌ CLEAR").color(egui::Color32::RED)).clicked() {
+                            if let Ok(mut data) = self.state.try_lock() {
+                                data.nodes.clear();
+                            }
+                        }
+                    });
                 });
 
                 ui.separator();
 
+                // --- CANVAS GRAPH ---
                 let (rect, _response) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
                 let painter = ui.painter_at(rect);
                 let center = rect.center();
@@ -130,7 +142,7 @@ impl eframe::App for OdfizApp {
                             let pos_j = data.nodes[&node_names[j]].pos;
                             let diff = pos_i - pos_j;
                             let dist_sq = diff.length_sq().max(100.0);
-                            let force = diff / dist_sq * 1500.0;
+                            let force = diff / dist_sq * 2000.0;
                             
                             data.nodes.get_mut(&node_names[i]).unwrap().vel += force * dt;
                             data.nodes.get_mut(&node_names[j]).unwrap().vel -= force * dt;
@@ -148,15 +160,8 @@ impl eframe::App for OdfizApp {
                         painter.text(node.pos + egui::vec2(0.0, 18.0), egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(14.0), egui::Color32::WHITE);
                     }
                     
-                    // PERBAIKAN: Gambar info status pakai painter saja, lebih aman!
-                    let status_text = format!("Status: {} | API Hits: {}", data.status, data.counter);
-                    painter.text(
-                        rect.left_bottom() + egui::vec2(10.0, -10.0),
-                        egui::Align2::LEFT_BOTTOM,
-                        status_text,
-                        egui::FontId::proportional(12.0),
-                        egui::Color32::LIGHT_GRAY
-                    );
+                    let status_text = format!("Nodes: {} | Hits: {}", data.nodes.len(), data.counter);
+                    painter.text(rect.left_bottom() + egui::vec2(10.0, -10.0), egui::Align2::LEFT_BOTTOM, status_text, egui::FontId::proportional(12.0), egui::Color32::LIGHT_GRAY);
                 }
             });
         });
