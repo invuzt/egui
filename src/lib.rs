@@ -4,7 +4,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::collections::HashMap;
 
-// Struktur fisik untuk tiap titik Graph
 struct Node {
     pos: egui::Pos2,
     vel: egui::Vec2,
@@ -30,7 +29,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         nodes: HashMap::new(),
     }));
 
-    // --- BACKEND: Axum Server ---
     let server_state = state.clone();
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -55,7 +53,6 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         });
     });
 
-    // --- FRONTEND: Egui UI ---
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {
@@ -99,7 +96,6 @@ impl eframe::App for OdfizApp {
                 ui.add_space(10.0);
                 ui.heading(egui::RichText::new("ODFIZ GRAPH CORE").strong().extra_letter_spacing(1.0));
                 
-                // --- INPUT BAR ---
                 ui.horizontal(|ui| {
                     let text_res = ui.add(egui::TextEdit::singleline(&mut self.input_text)
                         .hint_text("Ketik kata..."));
@@ -121,7 +117,6 @@ impl eframe::App for OdfizApp {
 
                 ui.separator();
 
-                // --- CANVAS GRAPH ---
                 let (rect, _response) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
                 let painter = ui.painter_at(rect);
                 let center = rect.center();
@@ -129,7 +124,6 @@ impl eframe::App for OdfizApp {
                 if let Ok(mut data) = self.state.try_lock() {
                     let node_names: Vec<String> = data.nodes.keys().cloned().collect();
                     
-                    // 1. Physics: Repulsion (Saling Tolak)
                     for i in 0..node_names.len() {
                         for j in (i + 1)..node_names.len() {
                             let pos_i = data.nodes[&node_names[i]].pos;
@@ -143,27 +137,26 @@ impl eframe::App for OdfizApp {
                         }
                     }
 
-                    // 2. Update & Draw
                     for (name, node) in data.nodes.iter_mut() {
-                        // Gravity to center
                         let to_center = center - node.pos;
                         node.vel += to_center * 1.5 * dt;
-
-                        // Friction
                         node.vel *= 0.92;
                         node.pos += node.vel * dt;
 
-                        // Draw Edge to center
                         painter.line_segment([node.pos, center], egui::Stroke::new(1.0, egui::Color32::from_gray(50)));
-                        
-                        // Draw Node
                         painter.circle_filled(node.pos, 10.0, egui::Color32::from_rgb(255, 77, 109));
                         painter.text(node.pos + egui::vec2(0.0, 18.0), egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(14.0), egui::Color32::WHITE);
                     }
                     
-                    ui.with_layer_at_from(egui::LayerId::background(), rect, |ui| {
-                        ui.label(format!("Status: {} | API Hits: {}", data.status, data.counter));
-                    });
+                    // PERBAIKAN: Gambar info status pakai painter saja, lebih aman!
+                    let status_text = format!("Status: {} | API Hits: {}", data.status, data.counter);
+                    painter.text(
+                        rect.left_bottom() + egui::vec2(10.0, -10.0),
+                        egui::Align2::LEFT_BOTTOM,
+                        status_text,
+                        egui::FontId::proportional(12.0),
+                        egui::Color32::LIGHT_GRAY
+                    );
                 }
             });
         });
