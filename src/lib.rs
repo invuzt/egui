@@ -2,30 +2,41 @@
 use eframe::egui;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use std::collections::HashMap;
 
-// State aplikasi untuk sinkronisasi Server & UI
+// Struktur fisik untuk tiap titik Graph
+struct Node {
+    pos: egui::Pos2,
+    vel: egui::Vec2,
+}
+
 struct AppState {
     status: String,
     counter: u64,
+    nodes: HashMap<String, Node>,
 }
 
 #[no_mangle]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
-    
-    // Inisialisasi State yang bisa dibagi antar thread
+
+    android_logger::init_once(
+        android_logger::Config::default().with_max_level(log::LevelFilter::Info)
+    );
+
     let state = Arc::new(Mutex::new(AppState {
         status: "Starting...".to_string(),
         counter: 0,
+        nodes: HashMap::new(),
     }));
 
-    // --- SIKSAAN 1: Jalankan Server Axum di Background ---
+    // --- BACKEND: Axum Server ---
     let server_state = state.clone();
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let app = axum::Router::new()
-                .route("/", axum::routing::get(|| async { "Odfiz Core Server: High Performance Rust" }))
+                .route("/", axum::routing::get(|| async { "Odfiz Graph API Active" }))
                 .route("/hit", axum::routing::get({
                     let s = server_state.clone();
                     move || async move {
@@ -38,13 +49,13 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             {
                 let mut data = server_state.lock().await;
-                data.status = "Online (Port 3000)".to_string();
+                data.status = "Graph & Server Online".to_string();
             }
             axum::serve(listener, app).await.unwrap();
         });
     });
 
-    // --- UI EGUI (Frontend) ---
+    // --- FRONTEND: Egui UI ---
     let mut options = eframe::NativeOptions::default();
     options.renderer = eframe::Renderer::Glow;
     options.event_loop_builder = Some(Box::new(move |builder| {
@@ -55,10 +66,12 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         "Odfiz Core",
         options,
         Box::new(|cc| {
-            // DIET KETAT: Skala 1.4 agar terlihat seperti app sistem yang padat
-            cc.egui_ctx.set_pixels_per_point(1.4); 
+            cc.egui_ctx.set_pixels_per_point(1.4);
             setup_custom_fonts(&cc.egui_ctx);
-            Box::new(OdfizApp { state })
+            Box::new(OdfizApp { 
+                state, 
+                input_text: String::new() 
+            })
         }),
     );
 }
@@ -73,37 +86,87 @@ fn setup_custom_fonts(ctx: &egui::Context) {
 
 struct OdfizApp {
     state: Arc<Mutex<AppState>>,
+    input_text: String,
 }
 
 impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Gunakan visual default yang bersih
         ctx.set_visuals(egui::Visuals::dark());
+        let dt = ctx.input(|i| i.stable_dt).min(0.1); 
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(10.0);
-                ui.heading(egui::RichText::new("ODFIZ CORE").strong().extra_letter_spacing(1.0));
+                ui.heading(egui::RichText::new("ODFIZ GRAPH CORE").strong().extra_letter_spacing(1.0));
+                
+                // --- INPUT BAR ---
+                ui.horizontal(|ui| {
+                    let text_res = ui.add(egui::TextEdit::singleline(&mut self.input_text)
+                        .hint_text("Ketik kata..."));
+                    
+                    if ui.button("ADD").clicked() || (text_res.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
+                        if !self.input_text.is_empty() {
+                            if let Ok(mut data) = self.state.try_lock() {
+                                let name = self.input_text.clone();
+                                let center = ui.max_rect().center();
+                                data.nodes.entry(name).or_insert(Node {
+                                    pos: center + egui::vec2(rand::random::<f32>() * 10.0, rand::random::<f32>() * 10.0),
+                                    vel: egui::Vec2::ZERO,
+                                });
+                                self.input_text.clear();
+                            }
+                        }
+                    }
+                });
+
                 ui.separator();
 
-                // Ambil data dari server thread (non-blocking)
-                if let Ok(data) = self.state.try_lock() {
-                    ui.group(|ui| {
-                        ui.set_width(ui.available_width());
-                        ui.label(format!("Server Status: {}", data.status));
-                        ui.label(format!("API Hits: {}", data.counter));
-                    });
-                }
+                // --- CANVAS GRAPH ---
+                let (rect, _response) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
+                let painter = ui.painter_at(rect);
+                let center = rect.center();
 
-                ui.add_space(10.0);
-                ui.label("Mesin Rust Aktif di Background");
-                
-                if ui.button("Simulasi Refresh").clicked() {
-                    // Logic refresh
+                if let Ok(mut data) = self.state.try_lock() {
+                    let node_names: Vec<String> = data.nodes.keys().cloned().collect();
+                    
+                    // 1. Physics: Repulsion (Saling Tolak)
+                    for i in 0..node_names.len() {
+                        for j in (i + 1)..node_names.len() {
+                            let pos_i = data.nodes[&node_names[i]].pos;
+                            let pos_j = data.nodes[&node_names[j]].pos;
+                            let diff = pos_i - pos_j;
+                            let dist_sq = diff.length_sq().max(100.0);
+                            let force = diff / dist_sq * 1500.0;
+                            
+                            data.nodes.get_mut(&node_names[i]).unwrap().vel += force * dt;
+                            data.nodes.get_mut(&node_names[j]).unwrap().vel -= force * dt;
+                        }
+                    }
+
+                    // 2. Update & Draw
+                    for (name, node) in data.nodes.iter_mut() {
+                        // Gravity to center
+                        let to_center = center - node.pos;
+                        node.vel += to_center * 1.5 * dt;
+
+                        // Friction
+                        node.vel *= 0.92;
+                        node.pos += node.vel * dt;
+
+                        // Draw Edge to center
+                        painter.line_segment([node.pos, center], egui::Stroke::new(1.0, egui::Color32::from_gray(50)));
+                        
+                        // Draw Node
+                        painter.circle_filled(node.pos, 10.0, egui::Color32::from_rgb(255, 77, 109));
+                        painter.text(node.pos + egui::vec2(0.0, 18.0), egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(14.0), egui::Color32::WHITE);
+                    }
+                    
+                    ui.with_layer_at_from(egui::LayerId::background(), rect, |ui| {
+                        ui.label(format!("Status: {} | API Hits: {}", data.status, data.counter));
+                    });
                 }
             });
         });
-        // Paksa refresh UI tiap detik untuk update status server
-        ctx.request_repaint_after(std::time::Duration::from_millis(500));
+        ctx.request_repaint(); 
     }
 }
