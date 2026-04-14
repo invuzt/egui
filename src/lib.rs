@@ -11,7 +11,6 @@ struct Node {
 
 struct AppState {
     nodes: HashMap<String, Node>,
-    // Relasi: "A" terhubung ke ["B", "C"]
     links: Vec<(String, String)>,
 }
 
@@ -58,18 +57,11 @@ impl eframe::App for OdfizApp {
             ui.vertical_centered(|ui| {
                 ui.heading("ODFIZ LINKED GRAPH");
 
-                // --- KEYBOARD PILIHAN (DENGAN RELASI) ---
                 ui.horizontal_wrapped(|ui| {
-                    if ui.button("➕ ADD CORE").clicked() {
-                        self.add_node_with_link("CORE", None);
-                    }
-                    if ui.button("🌿 ADD RUST").clicked() {
-                        self.add_node_with_link("RUST", Some("CORE"));
-                    }
-                    if ui.button("🦀 ADD ODFIZ").clicked() {
-                        self.add_node_with_link("ODFIZ", Some("CORE"));
-                    }
-                    if ui.button("🔗 LINK RUST-ODFIZ").clicked() {
+                    if ui.button("➕ CORE").clicked() { self.add_node_with_link("CORE", None); }
+                    if ui.button("🌿 RUST").clicked() { self.add_node_with_link("RUST", Some("CORE")); }
+                    if ui.button("🦀 ODFIZ").clicked() { self.add_node_with_link("ODFIZ", Some("CORE")); }
+                    if ui.button("🔗 LINK R-O").clicked() {
                         if let Ok(mut data) = self.state.try_lock() {
                             data.links.push(("RUST".to_string(), "ODFIZ".to_string()));
                         }
@@ -88,43 +80,45 @@ impl eframe::App for OdfizApp {
                 let center = rect.center();
 
                 if let Ok(mut data) = self.state.try_lock() {
-                    let node_names: Vec<String> = data.nodes.keys().cloned().collect();
-
-                    // 1. Repulsion: Semua saling dorong biar nggak numpuk
-                    for i in 0..node_names.len() {
-                        for j in (i + 1)..node_names.len() {
-                            let pos_i = data.nodes[&node_names[i]].pos;
-                            let pos_j = data.nodes[&node_names[j]].pos;
+                    // Ambil daftar nama untuk loop repulsion
+                    let names: Vec<String> = data.nodes.keys().cloned().collect();
+                    
+                    // 1. Repulsion (Tolak-menolak)
+                    for i in 0..names.len() {
+                        for j in (i + 1)..names.len() {
+                            let pos_i = data.nodes[&names[i]].pos;
+                            let pos_j = data.nodes[&names[j]].pos;
                             let diff = pos_i - pos_j;
                             let dist_sq = diff.length_sq().max(1000.0);
                             let force = diff / dist_sq * 4000.0;
-                            data.nodes.get_mut(&node_names[i]).unwrap().vel += force * dt;
-                            data.nodes.get_mut(&node_names[j]).unwrap().vel -= force * dt;
+                            
+                            data.nodes.get_mut(&names[i]).unwrap().vel += force * dt;
+                            data.nodes.get_mut(&names[j]).unwrap().vel -= force * dt;
                         }
                     }
 
-                    // 2. Spring Tension: Yang terhubung saling tarik
-                    for (from, to) in &data.links {
-                        if data.nodes.contains_key(from) && data.nodes.contains_key(to) {
-                            let pos_from = data.nodes[from].pos;
-                            let pos_to = data.nodes[to].pos;
+                    // 2. Spring Tension (Tarik-menarik)
+                    // CLONE links dulu biar gak tabrakan borrow-nya
+                    let current_links = data.links.clone(); 
+                    for (from, to) in current_links {
+                        if data.nodes.contains_key(&from) && data.nodes.contains_key(&to) {
+                            let pos_from = data.nodes[&from].pos;
+                            let pos_to = data.nodes[&to].pos;
                             let diff = pos_to - pos_from;
                             let dist = diff.length().max(1.0);
-                            let desired_dist = 100.0; // Panjang "karet" penghubung
-                            let spring_force = diff * (dist - desired_dist) * 0.05;
+                            let spring_force = diff * (dist - 100.0) * 0.05;
                             
-                            data.nodes.get_mut(from).unwrap().vel += spring_force * dt;
-                            data.nodes.get_mut(to).unwrap().vel -= spring_force * dt;
+                            data.nodes.get_mut(&from).unwrap().vel += spring_force * dt;
+                            data.nodes.get_mut(&to).unwrap().vel -= spring_force * dt;
                             
-                            // Gambar Garis Hubungan
                             painter.line_segment([pos_from, pos_to], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 255, 150)));
                         }
                     }
 
-                    // 3. Update & Brownian
+                    // 3. Update Posisi & Render
                     for (name, node) in data.nodes.iter_mut() {
-                        node.vel += egui::vec2((rand::random::<f32>() - 0.5) * 5.0, (rand::random::<f32>() - 0.5) * 5.0) * dt;
-                        node.vel += (center - node.pos) * 0.5 * dt; // Gravity lemah
+                        node.vel += egui::vec2((rand::random::<f32>()-0.5)*5.0, (rand::random::<f32>()-0.5)*5.0) * dt;
+                        node.vel += (center - node.pos) * 0.5 * dt;
                         node.vel *= 0.92;
                         node.pos += node.vel;
 
@@ -142,15 +136,20 @@ impl OdfizApp {
     fn add_node_with_link(&self, name: &str, parent: Option<&str>) {
         if let Ok(mut data) = self.state.try_lock() {
             let name_s = name.to_string();
-            if !data.nodes.contains_key(&name_s) {
-                data.nodes.insert(name_s.clone(), Node {
-                    pos: egui::pos2(rand::random::<f32>() * 300.0, rand::random::<f32>() * 500.0),
-                    vel: egui::Vec2::ZERO,
-                });
-            }
+            data.nodes.entry(name_s.clone()).or_insert_Node {
+                pos: egui::pos2(rand::random::<f32>() * 300.0, rand::random::<f32>() * 500.0),
+                vel: egui::Vec2::ZERO,
+            };
             if let Some(p) = parent {
                 data.links.push((p.to_string(), name_s));
             }
         }
+    }
+}
+
+// Helper untuk inisialisasi Node (biar rapi)
+impl Node {
+    fn new(x: f32, y: f32) -> Self {
+        Self { pos: egui::pos2(x, y), vel: egui::Vec2::ZERO }
     }
 }
