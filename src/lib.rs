@@ -7,6 +7,7 @@ use std::collections::HashMap;
 struct Node {
     pos: egui::Pos2,
     vel: egui::Vec2,
+    is_server: bool,
 }
 
 #[derive(Clone)]
@@ -64,18 +65,18 @@ impl eframe::App for OdfizApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(50.0);
             ui.vertical_centered(|ui| {
-                ui.heading("ODFIZ NETWORK SIMULATOR");
+                ui.heading("ODFIZ RT/RW NET SIMULATOR");
 
                 ui.horizontal_wrapped(|ui| {
-                    if ui.button("🌐 ADD NODE").clicked() { self.add_node("NET"); }
-                    if ui.button("⚡ CONNECT ALL").clicked() {
-                        if let Ok(mut data) = self.state.try_lock() {
-                            for l in data.links.iter_mut() { l.is_active = true; }
-                        }
+                    if ui.button("🖥 SET SERVER").clicked() {
+                        self.reset_and_add_server();
                     }
-                    if ui.button("💀 BREAK").clicked() {
+                    if ui.button("📱 ADD CLIENT").clicked() {
+                        self.add_client();
+                    }
+                    if ui.button("⚡ TOGGLE NET").clicked() {
                         if let Ok(mut data) = self.state.try_lock() {
-                            for l in data.links.iter_mut() { l.is_active = false; }
+                            for l in data.links.iter_mut() { l.is_active = !l.is_active; }
                         }
                     }
                 });
@@ -90,7 +91,7 @@ impl eframe::App for OdfizApp {
                 if let Ok(mut data) = self.state.try_lock() {
                     let names: Vec<String> = data.nodes.keys().cloned().collect();
 
-                    // --- TOUCH INTERACTION ---
+                    // --- INTERAKSI SENTUH ---
                     if response.drag_started() {
                         if let Some(pos) = mouse_pos {
                             for name in &names {
@@ -101,7 +102,6 @@ impl eframe::App for OdfizApp {
                             }
                         }
                     }
-                    // FIX: Pakas drag_stopped sesuai warning compiler
                     if response.drag_stopped() { self.drag_node = None; }
 
                     if let Some(ref name) = self.drag_node {
@@ -113,55 +113,63 @@ impl eframe::App for OdfizApp {
                         }
                     }
 
-                    // --- PHYSICS: REPULSION ---
+                    // --- PHYSICS: TOLAKAN ANTAR CLIENT ---
                     for i in 0..names.len() {
                         for j in (i + 1)..names.len() {
                             let pos_i = data.nodes[&names[i]].pos;
                             let pos_j = data.nodes[&names[j]].pos;
                             let diff = pos_i - pos_j;
-                            let dist_sq = diff.length_sq().max(1200.0);
-                            data.nodes.get_mut(&names[i]).unwrap().vel += (diff / dist_sq * 4500.0) * dt;
-                            data.nodes.get_mut(&names[j]).unwrap().vel -= (diff / dist_sq * 4500.0) * dt;
+                            let dist_sq = diff.length_sq().max(1500.0);
+                            let force = (diff / dist_sq * 5000.0) * dt;
+                            data.nodes.get_mut(&names[i]).unwrap().vel += force;
+                            data.nodes.get_mut(&names[j]).unwrap().vel -= force;
                         }
                     }
 
-                    // --- PHYSICS: SPRING & GLOW ---
-                    let links_to_process = data.links.clone(); // CLONE DISINI buat bypass borrow checker
-                    for link in links_to_process {
-                        if data.nodes.contains_key(&link.from) && data.nodes.contains_key(&link.to) {
-                            let pos1 = data.nodes[&link.from].pos;
-                            let pos2 = data.nodes[&link.to].pos;
-                            let diff = pos2 - pos1;
+                    // --- PHYSICS: HUBUNGAN SERVER-CLIENT ---
+                    let links_to_draw = data.links.clone();
+                    for link in links_to_draw {
+                        if let (Some(n1), Some(n2)) = (data.nodes.get(&link.from), data.nodes.get(&link.to)) {
+                            let diff = n2.pos - n1.pos;
                             let dist = diff.length().max(1.0);
-
+                            
                             if link.is_active {
-                                let pulse = (time * 5.0).sin() as f32 * 0.5 + 0.5;
-                                let color = egui::Color32::from_rgb(0, 255, 200);
-                                painter.line_segment([pos1, pos2], egui::Stroke::new(2.5 + pulse * 2.0, color.gamma_multiply(0.2 + pulse * 0.3)));
-                                painter.line_segment([pos1, pos2], egui::Stroke::new(1.0, color));
+                                // Animasi Glow & Aliran Data
+                                let pulse = (time * 4.0).sin() as f32 * 0.5 + 0.5;
+                                let flow = (time * 10.0).cos() as f32 * 5.0;
+                                let color = egui::Color32::from_rgb(0, 200, 255);
                                 
-                                let spring_force = diff * (dist - 120.0) * 0.08;
+                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(3.0 + pulse * 2.0, color.gamma_multiply(0.2)));
+                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(1.0, color));
+                                
+                                // Gaya pegas (Spring Force)
+                                let spring = diff * (dist - 150.0) * 0.05;
                                 if self.drag_node.as_ref() != Some(&link.from) {
-                                    data.nodes.get_mut(&link.from).unwrap().vel += spring_force * dt;
+                                    data.nodes.get_mut(&link.from).unwrap().vel += spring * dt;
                                 }
                                 if self.drag_node.as_ref() != Some(&link.to) {
-                                    data.nodes.get_mut(&link.to).unwrap().vel -= spring_force * dt;
+                                    data.nodes.get_mut(&link.to).unwrap().vel -= spring * dt;
                                 }
                             } else {
-                                painter.line_segment([pos1, pos2], egui::Stroke::new(1.0, egui::Color32::from_gray(60)));
+                                painter.line_segment([n1.pos, n2.pos], egui::Stroke::new(1.0, egui::Color32::from_gray(70)));
                             }
                         }
                     }
 
-                    // --- RENDER NODES ---
+                    // --- UPDATE & RENDER NODES ---
                     for (name, node) in data.nodes.iter_mut() {
                         if self.drag_node.as_ref() != Some(name) {
-                            node.vel += (center - node.pos) * 0.4 * dt;
-                            node.vel *= 0.91;
+                            // Gaya gravitasi ke tengah layar
+                            node.vel += (center - node.pos) * 0.3 * dt;
+                            node.vel *= 0.92; // Friction
                             node.pos += node.vel;
                         }
-                        painter.circle_filled(node.pos, 18.0, egui::Color32::from_rgb(30, 30, 30));
-                        painter.circle_stroke(node.pos, 18.0, egui::Stroke::new(2.0, egui::Color32::WHITE));
+
+                        let node_color = if node.is_server { egui::Color32::from_rgb(255, 100, 0) } else { egui::Color32::from_rgb(40, 40, 40) };
+                        let stroke_color = if node.is_server { egui::Color32::YELLOW } else { egui::Color32::WHITE };
+                        
+                        painter.circle_filled(node.pos, 20.0, node_color);
+                        painter.circle_stroke(node.pos, 20.0, egui::Stroke::new(2.0, stroke_color));
                         painter.text(node.pos, egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(10.0), egui::Color32::WHITE);
                     }
                 }
@@ -172,17 +180,37 @@ impl eframe::App for OdfizApp {
 }
 
 impl OdfizApp {
-    fn add_node(&self, prefix: &str) {
+    fn reset_and_add_server(&self) {
         if let Ok(mut data) = self.state.try_lock() {
-            let id = data.nodes.len();
-            let name = format!("{}-{}", prefix, id);
-            data.nodes.insert(name.clone(), Node {
-                pos: egui::pos2(rand::random::<f32>() * 300.0, 300.0),
+            data.nodes.clear();
+            data.links.clear();
+            data.nodes.insert("SERVER-01".to_string(), Node {
+                pos: egui::pos2(200.0, 400.0),
                 vel: egui::Vec2::ZERO,
+                is_server: true,
             });
-            if id > 0 {
-                let prev = format!("{}-{}", prefix, id - 1);
-                data.links.push(Link { from: prev, to: name, is_active: true });
+        }
+    }
+
+    fn add_client(&self) {
+        if let Ok(mut data) = self.state.try_lock() {
+            let client_id = data.nodes.values().filter(|n| !n.is_server).count() + 1;
+            let name = format!("USER-{:02}", client_id);
+            
+            // Spawn posisi random dekat server
+            data.nodes.insert(name.clone(), Node {
+                pos: egui::pos2(rand::random::<f32>() * 300.0, rand::random::<f32>() * 600.0),
+                vel: egui::Vec2::ZERO,
+                is_server: false,
+            });
+
+            // Otomatis konek ke server (Cari node yang is_server = true)
+            let server_name = data.nodes.iter()
+                .find(|(_, n)| n.is_server)
+                .map(|(k, _)| k.clone());
+
+            if let Some(srv) = server_name {
+                data.links.push(Link { from: srv, to: name, is_active: true });
             }
         }
     }
