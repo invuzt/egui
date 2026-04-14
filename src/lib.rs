@@ -47,7 +47,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             {
                 let mut data = server_state.lock().await;
-                data.status = "Graph & Server Online".to_string();
+                data.status = "Graph Engine Optimized".to_string();
             }
             axum::serve(listener, app).await.unwrap();
         });
@@ -65,10 +65,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
         Box::new(|cc| {
             cc.egui_ctx.set_pixels_per_point(1.4);
             setup_custom_fonts(&cc.egui_ctx);
-            Box::new(OdfizApp { 
-                state, 
-                input_buffer: String::new() 
-            })
+            Box::new(OdfizApp { state })
         }),
     );
 }
@@ -83,52 +80,42 @@ fn setup_custom_fonts(ctx: &egui::Context) {
 
 struct OdfizApp {
     state: Arc<Mutex<AppState>>,
-    input_buffer: String,
 }
 
 impl eframe::App for OdfizApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(egui::Visuals::dark());
-        let dt = ctx.input(|i| i.stable_dt).min(0.1); 
+        
+        // --- TUNING FISIKA ---
+        // Kita kunci dt di 0.016 (60 FPS) biar gerakannya konsisten
+        let dt = 0.016; 
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(10.0);
             ui.vertical_centered(|ui| {
                 ui.heading(egui::RichText::new("ODFIZ GRAPH CORE").strong().extra_letter_spacing(1.0));
                 
-                // --- DISPLAY INPUT ---
-                ui.group(|ui| {
-                    ui.set_width(ui.available_width());
-                    ui.label(egui::RichText::new(&self.input_buffer).size(24.0).color(egui::Color32::LIGHT_BLUE));
-                    if self.input_buffer.is_empty() { ui.label("Pilih huruf..."); }
-                });
-
-                // --- VIRTUAL KEYBOARD (PILIHAN) ---
-                ui.group(|ui| {
-                    let keys = vec!["A", "B", "C", "RUST", "CORE", "ODFIZ", "1", "2"];
-                    ui.horizontal_wrapped(|ui| {
-                        for key in keys {
-                            if ui.button(egui::RichText::new(key).size(18.0)).clicked() {
-                                if let Ok(mut data) = self.state.try_lock() {
-                                    let center = ui.max_rect().center();
-                                    data.nodes.entry(key.to_string()).or_insert(Node {
-                                        pos: center + egui::vec2(rand::random::<f32>() * 10.0, rand::random::<f32>() * 10.0),
-                                        vel: egui::Vec2::ZERO,
-                                    });
-                                }
-                            }
-                        }
-                        if ui.button(egui::RichText::new("❌ CLEAR").color(egui::Color32::RED)).clicked() {
+                // --- PILIHAN NODE ---
+                ui.horizontal_wrapped(|ui| {
+                    let keys = vec!["RUST", "CORE", "ODFIZ", "API", "FAST"];
+                    for key in keys {
+                        if ui.button(key).clicked() {
                             if let Ok(mut data) = self.state.try_lock() {
-                                data.nodes.clear();
+                                let center = ui.max_rect().center();
+                                data.nodes.entry(key.to_string()).or_insert(Node {
+                                    pos: center + egui::vec2(rand::random::<f32>() * 20.0, rand::random::<f32>() * 20.0),
+                                    vel: egui::Vec2::ZERO,
+                                });
                             }
                         }
-                    });
+                    }
+                    if ui.button(egui::RichText::new("RESET").color(egui::Color32::RED)).clicked() {
+                        if let Ok(mut data) = self.state.try_lock() { data.nodes.clear(); }
+                    }
                 });
 
                 ui.separator();
 
-                // --- CANVAS GRAPH ---
                 let (rect, _response) = ui.allocate_at_least(ui.available_size(), egui::Sense::hover());
                 let painter = ui.painter_at(rect);
                 let center = rect.center();
@@ -136,35 +123,42 @@ impl eframe::App for OdfizApp {
                 if let Ok(mut data) = self.state.try_lock() {
                     let node_names: Vec<String> = data.nodes.keys().cloned().collect();
                     
+                    // 1. Repulsion (Gaya Tolak) - Dibuat lebih halus
                     for i in 0..node_names.len() {
                         for j in (i + 1)..node_names.len() {
                             let pos_i = data.nodes[&node_names[i]].pos;
                             let pos_j = data.nodes[&node_names[j]].pos;
                             let diff = pos_i - pos_j;
-                            let dist_sq = diff.length_sq().max(100.0);
-                            let force = diff / dist_sq * 2000.0;
+                            let dist_sq = diff.length_sq().max(400.0); // Jangan terlalu dekat
+                            let force = diff / dist_sq * 2500.0;
                             
                             data.nodes.get_mut(&node_names[i]).unwrap().vel += force * dt;
                             data.nodes.get_mut(&node_names[j]).unwrap().vel -= force * dt;
                         }
                     }
 
+                    // 2. Integrasi Posisi
                     for (name, node) in data.nodes.iter_mut() {
+                        // Tarikan ke tengah (Gravity)
                         let to_center = center - node.pos;
-                        node.vel += to_center * 1.5 * dt;
-                        node.vel *= 0.92;
-                        node.pos += node.vel * dt;
+                        node.vel += to_center * 2.0 * dt;
 
-                        painter.line_segment([node.pos, center], egui::Stroke::new(1.0, egui::Color32::from_gray(50)));
-                        painter.circle_filled(node.pos, 10.0, egui::Color32::from_rgb(255, 77, 109));
-                        painter.text(node.pos + egui::vec2(0.0, 18.0), egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(14.0), egui::Color32::WHITE);
+                        // Damping (Gesekan) - 0.95 biar meluncur lebih lama/halus
+                        node.vel *= 0.95;
+                        node.pos += node.vel; // Update posisi langsung
+
+                        // Render Garis
+                        painter.line_segment([node.pos, center], egui::Stroke::new(1.0, egui::Color32::from_gray(60)));
+                        
+                        // Render Bola & Teks
+                        painter.circle_filled(node.pos, 12.0, egui::Color32::from_rgb(255, 77, 109));
+                        painter.text(node.pos, egui::Align2::CENTER_CENTER, name, egui::FontId::proportional(12.0), egui::Color32::WHITE);
                     }
-                    
-                    let status_text = format!("Nodes: {} | Hits: {}", data.nodes.len(), data.counter);
-                    painter.text(rect.left_bottom() + egui::vec2(10.0, -10.0), egui::Align2::LEFT_BOTTOM, status_text, egui::FontId::proportional(12.0), egui::Color32::LIGHT_GRAY);
                 }
             });
         });
+
+        // Paksa refresh terus menerus agar animasi lancar
         ctx.request_repaint(); 
     }
 }
