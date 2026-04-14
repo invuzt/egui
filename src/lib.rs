@@ -80,10 +80,9 @@ impl eframe::App for OdfizApp {
                 let center = rect.center();
 
                 if let Ok(mut data) = self.state.try_lock() {
-                    // Ambil daftar nama untuk loop repulsion
                     let names: Vec<String> = data.nodes.keys().cloned().collect();
                     
-                    // 1. Repulsion (Tolak-menolak)
+                    // 1. Repulsion
                     for i in 0..names.len() {
                         for j in (i + 1)..names.len() {
                             let pos_i = data.nodes[&names[i]].pos;
@@ -97,8 +96,7 @@ impl eframe::App for OdfizApp {
                         }
                     }
 
-                    // 2. Spring Tension (Tarik-menarik)
-                    // CLONE links dulu biar gak tabrakan borrow-nya
+                    // 2. Spring Tension (Clone links to avoid borrow conflict)
                     let current_links = data.links.clone(); 
                     for (from, to) in current_links {
                         if data.nodes.contains_key(&from) && data.nodes.contains_key(&to) {
@@ -108,14 +106,14 @@ impl eframe::App for OdfizApp {
                             let dist = diff.length().max(1.0);
                             let spring_force = diff * (dist - 100.0) * 0.05;
                             
-                            data.nodes.get_mut(&from).unwrap().vel += spring_force * dt;
-                            data.nodes.get_mut(&to).unwrap().vel -= spring_force * dt;
+                            if let Some(n) = data.nodes.get_mut(&from) { n.vel += spring_force * dt; }
+                            if let Some(n) = data.nodes.get_mut(&to) { n.vel -= spring_force * dt; }
                             
                             painter.line_segment([pos_from, pos_to], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 255, 150)));
                         }
                     }
 
-                    // 3. Update Posisi & Render
+                    // 3. Update & Draw
                     for (name, node) in data.nodes.iter_mut() {
                         node.vel += egui::vec2((rand::random::<f32>()-0.5)*5.0, (rand::random::<f32>()-0.5)*5.0) * dt;
                         node.vel += (center - node.pos) * 0.5 * dt;
@@ -136,20 +134,14 @@ impl OdfizApp {
     fn add_node_with_link(&self, name: &str, parent: Option<&str>) {
         if let Ok(mut data) = self.state.try_lock() {
             let name_s = name.to_string();
-            data.nodes.entry(name_s.clone()).or_insert_Node {
+            // Perbaikan syntax di sini:
+            data.nodes.entry(name_s.clone()).or_insert(Node {
                 pos: egui::pos2(rand::random::<f32>() * 300.0, rand::random::<f32>() * 500.0),
                 vel: egui::Vec2::ZERO,
-            };
+            });
             if let Some(p) = parent {
                 data.links.push((p.to_string(), name_s));
             }
         }
-    }
-}
-
-// Helper untuk inisialisasi Node (biar rapi)
-impl Node {
-    fn new(x: f32, y: f32) -> Self {
-        Self { pos: egui::pos2(x, y), vel: egui::Vec2::ZERO }
     }
 }
