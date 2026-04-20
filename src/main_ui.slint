@@ -2,14 +2,13 @@ import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slin
 
 export component AppWindow inherits Window {
     title: "UI Elements";
-    background: #F2F2F7; // iOS Light Gray Background
+    background: #F2F2F7;
     width: 400px;
     height: 800px;
 
-    // State untuk komponen agar interaktif
     in-out property <bool> switch-on: true;
     in-out property <int> stepper-val: 0;
-    in-out property <float> slider-val: 50.0;
+    in-out property <float> slider-val: 0.5; // 0.0 sampai 1.0
 
     ScrollView {
         VerticalBox {
@@ -17,7 +16,6 @@ export component AppWindow inherits Window {
             spacing: 20px;
             alignment: start;
 
-            // Header Title
             Text {
                 text: "UI elements";
                 font-size: 34px;
@@ -29,36 +27,38 @@ export component AppWindow inherits Window {
             VerticalBox {
                 padding: 0;
                 spacing: 0;
-                Text { text: "Header"; color: #8E8E93; font-size: 13px; margin-bottom: 5px; }
+                Text { text: "Header"; color: #8E8E93; font-size: 13px; }
+                Rectangle { height: 5px; } // Pengganti margin-bottom
                 
                 Rectangle {
                     background: white;
                     border-radius: 12px;
                     VerticalBox {
-                        padding-left: 15px; padding-right: 15px;
-                        // Primary
+                        padding-left: 15px; padding-right: 15px; spacing: 0;
+                        
                         HorizontalBox {
                             height: 44px;
                             Text { text: "Primary"; vertical-alignment: center; color: black; font-size: 17px; }
-                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                            Text { text: ">"; horizontal-alignment: right; color: #C7C7CC; vertical-alignment: center; }
                         }
-                        Rectangle { height: 1px; background: #E5E5EA; } // Divider
-                        // Secondary
+                        Rectangle { height: 1px; background: #E5E5EA; }
+                        
                         HorizontalBox {
                             height: 44px;
                             Text { text: "Secondary"; vertical-alignment: center; color: black; font-size: 17px; }
-                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                            Text { text: ">"; horizontal-alignment: right; color: #C7C7CC; vertical-alignment: center; }
                         }
-                        Rectangle { height: 1px; background: #E5E5EA; } // Divider
-                        // Tertiary
+                        Rectangle { height: 1px; background: #E5E5EA; }
+                        
                         HorizontalBox {
                             height: 44px;
                             Text { text: "Tertiary"; vertical-alignment: center; color: black; font-size: 17px; }
-                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                            Text { text: ">"; horizontal-alignment: right; color: #C7C7CC; vertical-alignment: center; }
                         }
                     }
                 }
-                Text { text: "Footer text"; color: #8E8E93; font-size: 13px; margin-top: 5px; }
+                Rectangle { height: 5px; }
+                Text { text: "Footer text"; color: #8E8E93; font-size: 13px; }
             }
 
             // Single List Item
@@ -78,13 +78,12 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Controls Group (Stepper & Switch)
+            // Controls Group
             Rectangle {
                 background: white;
                 border-radius: 12px;
                 VerticalBox {
-                    padding-left: 15px; padding-right: 15px;
-                    // Stepper
+                    padding-left: 15px; padding-right: 15px; spacing: 0;
                     HorizontalBox {
                         height: 50px;
                         Text { text: "Stepper"; vertical-alignment: center; color: black; font-size: 17px; }
@@ -95,16 +94,15 @@ export component AppWindow inherits Window {
                                 border-radius: 8px;
                                 width: 100px; height: 32px;
                                 HorizontalBox {
-                                    spacing: 0;
-                                    Text { text: " - "; font-size: 20px; TouchArea { clicked => { root.stepper-val -= 1 } } }
-                                    Rectangle { width: 1px; background: #C7C7CC; margin-top: 5px; margin-bottom: 5px; }
-                                    Text { text: " + "; font-size: 20px; TouchArea { clicked => { root.stepper-val += 1 } } }
+                                    padding: 2px;
+                                    Text { text: " - "; font-size: 20px; vertical-alignment: center; horizontal-alignment: center; TouchArea { clicked => { root.stepper-val -= 1 } } }
+                                    Rectangle { width: 1px; background: #C7C7CC; }
+                                    Text { text: " + "; font-size: 20px; vertical-alignment: center; horizontal-alignment: center; TouchArea { clicked => { root.stepper-val += 1 } } }
                                 }
                             }
                         }
                     }
                     Rectangle { height: 1px; background: #E5E5EA; }
-                    // Switch
                     HorizontalBox {
                         height: 50px;
                         Text { text: "Switch"; vertical-alignment: center; color: black; font-size: 17px; }
@@ -112,16 +110,15 @@ export component AppWindow inherits Window {
                             width: 51px; height: 31px;
                             border-radius: 16px;
                             background: root.switch-on ? #34C759 : #E9E9EB;
-                            animate background { duration: 200ms; }
+                            animate background { duration: 150ms; }
                             
-                            Rectangle { // Thumb
+                            Rectangle {
                                 x: root.switch-on ? 22px : 2px;
+                                y: 2px;
                                 width: 27px; height: 27px;
                                 border-radius: 14px;
                                 background: white;
-                                drop-shadow-blur: 4px;
-                                drop-shadow-color: #00000020;
-                                animate x { duration: 200ms; easing: ease-in-out; }
+                                animate x { duration: 150ms; }
                             }
                             TouchArea { clicked => { root.switch-on = !root.switch-on } }
                         }
@@ -129,39 +126,42 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Slider (Tortoise & Hare)
+            // Slider
             Rectangle {
                 background: white;
                 border-radius: 12px;
                 height: 60px;
-                HorizontalBox {
+                slider-container := HorizontalBox {
                     padding-left: 15px; padding-right: 15px;
                     spacing: 15px;
                     Text { text: "🐢"; vertical-alignment: center; }
-                    // Custom Slider Track
-                    Rectangle {
+                    
+                    track := Rectangle {
                         height: 4px;
                         background: #E5E5EA;
                         border-radius: 2px;
                         y: (parent.height / 2) - 2px;
-                        Rectangle { // Active Track
-                            width: root.slider-val * 1%;
+                        
+                        Rectangle { 
+                            width: parent.width * root.slider-val;
                             background: #007AFF;
                             height: 100%;
                             border-radius: 2px;
                         }
-                        Rectangle { // Handle
-                            x: (root.slider-val * 1%) - 14px;
-                            y: -12px;
+                        
+                        handle := Rectangle {
+                            x: (parent.width * root.slider-val) - (self.width / 2);
+                            y: (parent.height / 2) - (self.height / 2);
                             width: 28px; height: 28px;
                             background: white;
                             border-radius: 14px;
-                            drop-shadow-blur: 4px;
-                            drop-shadow-color: #00000030;
-                            TouchArea {
+                            border-width: 0.5px;
+                            border-color: #00000020;
+                            
+                            ta := TouchArea {
                                 moved => {
                                     if (self.pressed) {
-                                        root.slider-val = Math.max(0, Math.min(100, (root.slider-val + (touch-x - self.width/2) / 2)));
+                                        root.slider-val = Math.max(0, Math.min(1.0, (self.mouse-x + handle.x) / track.width));
                                     }
                                 }
                             }
@@ -171,11 +171,10 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Large Blue Button
             Rectangle {
                 height: 55px;
                 background: #007AFF;
-                border-radius: 27px;
+                border-radius: 14px;
                 Text {
                     text: "Large Button";
                     color: white;
