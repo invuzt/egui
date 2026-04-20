@@ -1,99 +1,188 @@
-import { Button, VerticalBox, ScrollView, HorizontalBox, LineEdit } from "std-widgets.slint";
-
-export global OdfizTheme {
-    in property <color> bg-outer: #C0C4CC;
-    in property <color> card-bg: #ffffff;
-    in property <color> terminal-bg: #1a1b26;
-    in property <color> accent-color: #ff4d6d;
-    in property <color> terminal-text: #a9b1d6;
-    in property <length> safe-area-top: 65px;
-}
+import { Button, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Odfiz Native Core";
-    background: OdfizTheme.bg-outer;
-    default-font-family: "monospace"; // Seragamkan semua font
-    
-    // Properti status-text sekarang menampung seluruh history
-    in-out property <string> log-history: "System initialized...";
-    callback process-data(string);
+    title: "UI Elements";
+    background: #F2F2F7; // iOS Light Gray Background
+    width: 400px;
+    height: 800px;
+
+    // State untuk komponen agar interaktif
+    in-out property <bool> switch-on: true;
+    in-out property <int> stepper-val: 0;
+    in-out property <float> slider-val: 50.0;
 
     ScrollView {
-        viewport-height: main-layout.preferred-height;
-        
-        main-layout := VerticalBox {
+        VerticalBox {
             padding: 20px;
-            padding-top: OdfizTheme.safe-area-top;
-            spacing: 15px;
+            spacing: 20px;
+            alignment: start;
 
-            // 1. TERMINAL LOG (SEKARANG DI ATAS)
-            Rectangle {
-                background: OdfizTheme.terminal-bg;
-                border-radius: 12px;
-                height: 250px; // Dibuat lebih tinggi buat history
-                clip: true;
-
-                VerticalBox {
-                    padding: 12px;
-                    spacing: 8px;
-                    
-                    HorizontalBox {
-                        alignment: start;
-                        spacing: 6px;
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
-                        Rectangle { width: 8px; height: 8px; border-radius: 4px; background: #444; }
-                    }
-
-                    ScrollView {
-                        viewport-height: log-content.preferred-height;
-                        log-content := TextInput {
-                            text: root.log-history;
-                            font-size: 13px;
-                            color: OdfizTheme.terminal-text;
-                            read-only: true;
-                            wrap: word-wrap;
-                            single-line: false;
-                        }
-                    }
-                }
-            }
-
-            // 2. AREA INPUT (DI BAWAH TERMINAL)
-            Rectangle {
-                background: OdfizTheme.card-bg;
-                border-radius: 20px;
-                height: 150px;
-                drop-shadow-blur: 15px;
-                drop-shadow-color: #00000015;
-
-                VerticalBox {
-                    padding: 20px;
-                    spacing: 15px;
-                    input_field := LineEdit {
-                        placeholder-text: "Enter data...";
-                        height: 45px;
-                        font-size: 15px;
-                    }
-                    HorizontalBox {
-                        alignment: center;
-                        Rectangle {
-                            background: OdfizTheme.accent-color;
-                            border-radius: 22px;
-                            height: 44px;
-                            width: 180px;
-                            Text { text: "EXECUTE"; color: white; font-weight: 800; }
-                            TouchArea { clicked => { root.process-data(input_field.text) } }
-                        }
-                    }
-                }
-            }
-
+            // Header Title
             Text {
-                text: "ODFIZ NATIVE CORE V.5.0";
-                font-size: 11px;
-                color: #555;
-                horizontal-alignment: center;
+                text: "UI elements";
+                font-size: 34px;
+                font-weight: 700;
+                color: black;
+            }
+
+            // Group 1: List Items
+            VerticalBox {
+                padding: 0;
+                spacing: 0;
+                Text { text: "Header"; color: #8E8E93; font-size: 13px; margin-bottom: 5px; }
+                
+                Rectangle {
+                    background: white;
+                    border-radius: 12px;
+                    VerticalBox {
+                        padding-left: 15px; padding-right: 15px;
+                        // Primary
+                        HorizontalBox {
+                            height: 44px;
+                            Text { text: "Primary"; vertical-alignment: center; color: black; font-size: 17px; }
+                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                        }
+                        Rectangle { height: 1px; background: #E5E5EA; } // Divider
+                        // Secondary
+                        HorizontalBox {
+                            height: 44px;
+                            Text { text: "Secondary"; vertical-alignment: center; color: black; font-size: 17px; }
+                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                        }
+                        Rectangle { height: 1px; background: #E5E5EA; } // Divider
+                        // Tertiary
+                        HorizontalBox {
+                            height: 44px;
+                            Text { text: "Tertiary"; vertical-alignment: center; color: black; font-size: 17px; }
+                            Text { text: ">"; horizontal-alignment: end; color: #C7C7CC; }
+                        }
+                    }
+                }
+                Text { text: "Footer text"; color: #8E8E93; font-size: 13px; margin-top: 5px; }
+            }
+
+            // Single List Item
+            Rectangle {
+                background: white;
+                border-radius: 12px;
+                height: 50px;
+                HorizontalBox {
+                    padding-left: 15px; padding-right: 15px;
+                    Text { text: "Single List Item"; vertical-alignment: center; color: black; font-size: 17px; }
+                    HorizontalBox {
+                        alignment: end;
+                        spacing: 10px;
+                        Text { text: "Detail"; color: #8E8E93; vertical-alignment: center; }
+                        Text { text: ">"; color: #C7C7CC; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            // Controls Group (Stepper & Switch)
+            Rectangle {
+                background: white;
+                border-radius: 12px;
+                VerticalBox {
+                    padding-left: 15px; padding-right: 15px;
+                    // Stepper
+                    HorizontalBox {
+                        height: 50px;
+                        Text { text: "Stepper"; vertical-alignment: center; color: black; font-size: 17px; }
+                        HorizontalBox {
+                            alignment: end;
+                            Rectangle {
+                                background: #E9E9EB;
+                                border-radius: 8px;
+                                width: 100px; height: 32px;
+                                HorizontalBox {
+                                    spacing: 0;
+                                    Text { text: " - "; font-size: 20px; TouchArea { clicked => { root.stepper-val -= 1 } } }
+                                    Rectangle { width: 1px; background: #C7C7CC; margin-top: 5px; margin-bottom: 5px; }
+                                    Text { text: " + "; font-size: 20px; TouchArea { clicked => { root.stepper-val += 1 } } }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle { height: 1px; background: #E5E5EA; }
+                    // Switch
+                    HorizontalBox {
+                        height: 50px;
+                        Text { text: "Switch"; vertical-alignment: center; color: black; font-size: 17px; }
+                        Rectangle {
+                            width: 51px; height: 31px;
+                            border-radius: 16px;
+                            background: root.switch-on ? #34C759 : #E9E9EB;
+                            animate background { duration: 200ms; }
+                            
+                            Rectangle { // Thumb
+                                x: root.switch-on ? 22px : 2px;
+                                width: 27px; height: 27px;
+                                border-radius: 14px;
+                                background: white;
+                                drop-shadow-blur: 4px;
+                                drop-shadow-color: #00000020;
+                                animate x { duration: 200ms; easing: ease-in-out; }
+                            }
+                            TouchArea { clicked => { root.switch-on = !root.switch-on } }
+                        }
+                    }
+                }
+            }
+
+            // Slider (Tortoise & Hare)
+            Rectangle {
+                background: white;
+                border-radius: 12px;
+                height: 60px;
+                HorizontalBox {
+                    padding-left: 15px; padding-right: 15px;
+                    spacing: 15px;
+                    Text { text: "🐢"; vertical-alignment: center; }
+                    // Custom Slider Track
+                    Rectangle {
+                        height: 4px;
+                        background: #E5E5EA;
+                        border-radius: 2px;
+                        y: (parent.height / 2) - 2px;
+                        Rectangle { // Active Track
+                            width: root.slider-val * 1%;
+                            background: #007AFF;
+                            height: 100%;
+                            border-radius: 2px;
+                        }
+                        Rectangle { // Handle
+                            x: (root.slider-val * 1%) - 14px;
+                            y: -12px;
+                            width: 28px; height: 28px;
+                            background: white;
+                            border-radius: 14px;
+                            drop-shadow-blur: 4px;
+                            drop-shadow-color: #00000030;
+                            TouchArea {
+                                moved => {
+                                    if (self.pressed) {
+                                        root.slider-val = Math.max(0, Math.min(100, (root.slider-val + (touch-x - self.width/2) / 2)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Text { text: "🐇"; vertical-alignment: center; }
+                }
+            }
+
+            // Large Blue Button
+            Rectangle {
+                height: 55px;
+                background: #007AFF;
+                border-radius: 27px;
+                Text {
+                    text: "Large Button";
+                    color: white;
+                    font-size: 17px;
+                    font-weight: 600;
+                }
+                TouchArea { clicked => { /* Action */ } }
             }
         }
     }
