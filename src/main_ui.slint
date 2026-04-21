@@ -8,7 +8,7 @@ export component AppWindow inherits Window {
 
     in-out property <bool> switch-on: true;
     in-out property <int> stepper-val: 0;
-    in-out property <float> slider-val: 0.5; // 0.0 sampai 1.0
+    in-out property <float> slider-val: 0.5;
 
     ScrollView {
         VerticalBox {
@@ -28,7 +28,7 @@ export component AppWindow inherits Window {
                 padding: 0;
                 spacing: 0;
                 Text { text: "Header"; color: #8E8E93; font-size: 13px; }
-                Rectangle { height: 5px; } // Pengganti margin-bottom
+                Rectangle { height: 5px; }
                 
                 Rectangle {
                     background: white;
@@ -78,7 +78,7 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Controls Group
+            // Controls Group (Stepper & Switch)
             Rectangle {
                 background: white;
                 border-radius: 12px;
@@ -126,39 +126,33 @@ export component AppWindow inherits Window {
                 }
             }
 
-            // Slider
+            // Slider (Tortoise & Hare)
             Rectangle {
                 background: white;
                 border-radius: 12px;
                 height: 60px;
-                slider-container := HorizontalBox {
+                slider-box := HorizontalBox {
                     padding-left: 15px; padding-right: 15px;
                     spacing: 15px;
                     Text { text: "🐢"; vertical-alignment: center; }
                     
                     track := Rectangle {
-                        height: 4px;
-                        background: #E5E5EA;
-                        border-radius: 2px;
+                        height: 4px; background: #E5E5EA; border-radius: 2px;
                         y: (parent.height / 2) - 2px;
                         
                         Rectangle { 
                             width: parent.width * root.slider-val;
-                            background: #007AFF;
-                            height: 100%;
-                            border-radius: 2px;
+                            background: #007AFF; height: 100%; border-radius: 2px;
                         }
                         
                         handle := Rectangle {
                             x: (parent.width * root.slider-val) - (self.width / 2);
                             y: (parent.height / 2) - (self.height / 2);
                             width: 28px; height: 28px;
-                            background: white;
-                            border-radius: 14px;
-                            border-width: 0.5px;
-                            border-color: #00000020;
+                            background: white; border-radius: 14px;
+                            border-width: 0.5px; border-color: #00000020;
                             
-                            ta := TouchArea {
+                            TouchArea {
                                 moved => {
                                     if (self.pressed) {
                                         root.slider-val = Math.max(0, Math.min(1.0, (self.mouse-x + handle.x) / track.width));
@@ -171,15 +165,14 @@ export component AppWindow inherits Window {
                 }
             }
 
+            // Large Button
             Rectangle {
                 height: 55px;
                 background: #007AFF;
                 border-radius: 14px;
                 Text {
                     text: "Large Button";
-                    color: white;
-                    font-size: 17px;
-                    font-weight: 600;
+                    color: white; font-size: 17px; font-weight: 600;
                 }
                 TouchArea { clicked => { /* Action */ } }
             }

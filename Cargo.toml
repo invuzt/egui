@@ -12,9 +12,10 @@ slint = { version = "1.15.1", features = ["compat-1-2", "backend-android-activit
 [build-dependencies]
 slint-build = "1.15.1"
 
+# OPTIMASI SIZE & SPEED
 [profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
+opt-level = "z"        # Fokus pada ukuran binary terkecil
+lto = true             # Link Time Optimization (buang fungsi tak terpakai)
+codegen-units = 1      # Optimasi maksimal (satu unit kompilasi)
+panic = "abort"        # Buang overhead error tracking
+strip = true           # Hapus semua simbol debug
