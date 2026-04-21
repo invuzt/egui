@@ -1,97 +1,105 @@
-import { ScrollView } from "std-widgets.slint";
+import { ScrollView, VerticalBox, HorizontalBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     title: "Odfiz Premium";
-    background: #FFFFFF; // Putih bersih
+    background: #FFFFFF;
     width: 400px;
     height: 800px;
 
     in-out property <string> current-view: "home";
 
-    // 1. HEADER MINIMALIS (STATIC)
+    // --- STATIC HEADER (Mahal & Clean) ---
     Rectangle {
         y: 0; z: 100;
-        width: 100%; height: 110px;
-        background: #FFFFFFEE; // Glassmorphism effect (semi-transparan)
+        width: 100%; height: 120px;
+        background: #FFFFFF;
         
-        VerticalBox {
-            padding-top: 55px; padding-left: 25px; padding-right: 25px;
-            HorizontalBox {
-                alignment: space-between;
-                Text {
-                    text: root.current-view == "home" ? "Overview" : "Service";
-                    font-size: 28px;
-                    font-weight: 800;
-                    color: #1C1C1E;
-                    letter-spacing: -0.5px;
-                }
-                // Tombol Back Minimalis
-                if (root.current-view != "home") : Rectangle {
-                    width: 40px; height: 40px; border-radius: 20px;
-                    background: #F2F2F7;
-                    Text { text: "✕"; color: #3A3A3C; font-weight: 700; }
-                    TouchArea { clicked => { root.current-view = "home" } }
-                }
-            }
+        Text {
+            x: 25px; y: 65px;
+            text: root.current-view == "home" ? "Overview" : "Service";
+            font-size: 32px;
+            font-weight: 800;
+            color: #1C1C1E;
+        }
+
+        if (root.current-view != "home") : Rectangle {
+            x: parent.width - 65px; y: 65px;
+            width: 40px; height: 40px; border-radius: 20px;
+            background: #F2F2F7;
+            Text { text: "✕"; font-size: 16px; color: #1C1C1E; }
+            TouchArea { clicked => { root.current-view = "home" } }
         }
     }
 
-    // 2. CONTENT AREA
+    // --- MAIN CONTENT ---
     ScrollView {
-        padding-top: 110px;
-        
-        VerticalBox {
+        y: 120px;
+        height: parent.height - 120px;
+        viewport-height: content-layout.preferred-height;
+
+        content-layout := VerticalBox {
             padding: 25px;
-            spacing: 20px;
+            spacing: 30px;
+            alignment: start;
 
             if (root.current-view == "home") : VerticalBox {
-                spacing: 25px;
-                
-                // CARD PREMIUM (Efek bayangan halus)
+                spacing: 30px;
+                padding: 0;
+
+                // 1. MAIN CARD (High Contrast)
                 Rectangle {
-                    height: 180px;
-                    background: #1C1C1E; // Dark Mode Card
-                    border-radius: 24px;
+                    height: 200px;
+                    background: #1C1C1E;
+                    border-radius: 28px;
                     
+                    // Dekorasi Lingkaran (Detail Mahal)
+                    Rectangle {
+                        x: parent.width - 100px; y: -30px;
+                        width: 150px; height: 150px; border-radius: 75px;
+                        background: #FFFFFF08;
+                    }
+
                     VerticalBox {
-                        padding: 25px;
-                        alignment: space-between;
-                        Text { text: "Total Balance"; color: #8E8E93; font-size: 14px; }
-                        Text { text: "$ 12,450.00"; color: white; font-size: 32px; font-weight: 700; }
-                        HorizontalBox {
-                            Rectangle {
-                                width: 90px; height: 32px; border-radius: 16px;
-                                background: #FFFFFF20;
-                                Text { text: "Details"; color: white; font-size: 12px; }
-                            }
+                        padding: 30px;
+                        alignment: space-around;
+                        Text { text: "Current Assets"; color: #8E8E93; font-size: 14px; letter-spacing: 1px; }
+                        Text { text: "$ 12,450.00"; color: white; font-size: 36px; font-weight: 800; }
+                        
+                        Rectangle {
+                            width: 100px; height: 36px; border-radius: 18px;
+                            background: #3A3A3C;
+                            Text { text: "History"; color: white; font-size: 13px; font-weight: 600; }
                         }
                     }
                 }
 
-                Text { text: "Features"; color: #1C1C1E; font-size: 18px; font-weight: 700; }
+                // 2. FEATURE SECTION
+                Text { text: "Digital Services"; color: #1C1C1E; font-size: 20px; font-weight: 800; }
 
-                // GRID MENU MINIMALIS
                 HorizontalBox {
-                    spacing: 15px;
-                    // Feature 1
+                    padding: 0; spacing: 20px;
+                    height: 140px;
+                    
+                    // Calculator Item
                     Rectangle {
-                        height: 120px; background: #F9F9F9; border-radius: 20px;
+                        background: #F9F9F9; border-radius: 24px;
                         border-width: 1px; border-color: #F2F2F7;
                         VerticalBox {
-                            padding: 20px; alignment: space-between;
-                            Text { text: "🧮"; font-size: 24px; }
-                            Text { text: "Calculator"; color: #1C1C1E; font-size: 14px; font-weight: 600; }
+                            padding: 20px; alignment: space-around;
+                            Text { text: "🧮"; font-size: 28px; }
+                            Text { text: "Calculator"; color: #1C1C1E; font-size: 15px; font-weight: 700; }
                         }
                         TouchArea { clicked => { root.current-view = "calc" } }
                     }
-                    // Feature 2
+                    
+                    // Camera Item
                     Rectangle {
-                        height: 120px; background: #F9F9F9; border-radius: 20px;
+                        background: #F9F9F9; border-radius: 24px;
                         border-width: 1px; border-color: #F2F2F7;
                         VerticalBox {
-                            padding: 20px; alignment: space-between;
-                            Text { text: "📷"; font-size: 24px; }
-                            Text { text: "Camera"; color: #1C1C1E; font-size: 14px; font-weight: 600; }
+                            padding: 20px; alignment: space-around;
+                            Text { text: "📷"; font-size: 28px; }
+                            Text { text: "Camera"; color: #1C1C1E; font-size: 15px; font-weight: 700; }
                         }
                         TouchArea { clicked => { root.current-view = "camera" } }
                     }
@@ -99,9 +107,10 @@ export component AppWindow inherits Window {
             }
 
             if (root.current-view == "calc") : VerticalBox {
+                padding: 0;
                 Rectangle {
-                    height: 400px; background: #F2F2F7; border-radius: 24px;
-                    Text { text: "Calculator UI in development"; color: #8E8E93; }
+                    height: 100px; background: #F2F2F7; border-radius: 20px;
+                    Text { text: "Calculator Module Active"; color: #8E8E93; font-weight: 600; }
                 }
             }
         }
