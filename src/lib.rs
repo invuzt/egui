@@ -7,11 +7,8 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     let ui = AppWindow::new().unwrap();
     let ui_handle = ui.as_weak();
 
-    // Logika Hitung Otomatis
     ui.on_process_logic(move |formula| {
         let ui = ui_handle.unwrap();
-        
-        // Bersihkan input dari karakter aneh
         let clean_formula = formula.trim();
         
         if clean_formula.is_empty() {
@@ -19,10 +16,9 @@ pub extern "C" fn android_main(app: slint::android::AndroidApp) {
             return;
         }
 
-        // Evaluasi string matematika (misal: "1+2*3")
         match eval(clean_formula) {
             Ok(res) => ui.set_result_text(format!("{}", res).into()),
-            Err(_) => ui.set_result_text("Format Salah".into()),
+            Err(_) => ui.set_result_text("...".into()),
         }
     });
 
