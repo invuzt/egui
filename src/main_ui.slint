@@ -1,89 +1,60 @@
-import { ScrollView, VerticalBox, HorizontalBox, LineEdit, Button } from "std-widgets.slint";
+import { VerticalBox, LineEdit } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Vuzt Engine";
-    background: #FFFFFF;
-    // Window di Android otomatis full screen, tidak perlu 100%
+    // Properti ini adalah 'Pintu' untuk Rust
+    in-out property <string> engine-type: "Native Rust (No JVM)";
+    in-out property <string> render-mode: "GPU Accelerated";
+    in-out property <string> calc-result: "0";
+    in-out property <color> status-color: #00FF00;
 
-    in-out property <string> result-text: "0";
-    callback process-logic(string);
+    background: #1C1C1E;
 
     VerticalBox {
-        padding: 0;
-        spacing: 0;
+        padding: 20px;
+        spacing: 15px;
 
-        // --- DARK STATUS BAR AREA ---
+        // Header Bukti
+        Text {
+            text: "SYSTEM DATA";
+            color: #8E8E93;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        // Card Info
         Rectangle {
-            height: 40px;
-            background: #000000;
+            background: #2C2C2E;
+            border-radius: 12px;
+            height: 100px;
+            VerticalBox {
+                alignment: center;
+                Text { text: "Engine: " + root.engine-type; color: white; }
+                Text { text: "Render: " + root.render-mode; color: root.status-color; }
+            }
+        }
+
+        // Area Kerja (JS-like Logic in Rust)
+        Text { text: "Logic Processor:"; color: #8E8E93; }
+        input := LineEdit {
+            placeholder-text: "Ketik angka (misal: 2+2)";
+            height: 50px;
+            edited => { root.calculate(self.text) }
+        }
+
+        Rectangle {
+            height: 80px;
+            background: #00FF0015;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: #00FF00;
             Text {
-                text: "VUZT SYSTEM ACTIVE";
+                text: root.calc-result;
+                font-size: 30px;
                 color: #00FF00;
-                font-size: 10px;
-                font-family: "monospace";
                 horizontal-alignment: center;
             }
         }
-
-        // --- HEADER ---
-        Rectangle {
-            height: 100px;
-            background: #FFFFFF;
-            Text {
-                x: 25px; y: 40px;
-                text: "Rust Processor";
-                font-size: 28px;
-                font-weight: 900;
-                color: #1C1C1E;
-            }
-        }
-
-        VerticalBox {
-            padding: 25px;
-            spacing: 20px;
-
-            Text { text: "Input Formula:"; color: #8E8E93; font-weight: 600; }
-            
-            input_box := LineEdit {
-                font-size: 20px;
-                placeholder-text: "Contoh: 150 + 25 * 4";
-                height: 60px;
-                edited => { root.process-logic(self.text) }
-            }
-
-            Rectangle {
-                height: 150px;
-                background: #1C1C1E;
-                border-radius: 24px;
-                
-                VerticalBox {
-                    padding: 25px;
-                    alignment: center;
-                    Text { 
-                        text: "RESULT"; 
-                        color: #8E8E93; 
-                        font-size: 12px; 
-                        font-weight: 800;
-                        horizontal-alignment: center;
-                    }
-                    Text { 
-                        text: root.result-text; 
-                        color: #00FF00; 
-                        font-size: 45px; 
-                        font-weight: 900;
-                        horizontal-alignment: center;
-                    }
-                }
-            }
-
-            Button {
-                text: "CLEAR";
-                clicked => { 
-                    input_box.text = "";
-                    root.result-text = "0";
-                }
-            }
-        }
-        Rectangle { vertical-stretch: 1; }
     }
+
+    callback calculate(string);
 }
