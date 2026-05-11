@@ -1,20 +1,29 @@
 slint::include_modules!();
+use evalexpr::eval;
 
 #[no_mangle]
 pub extern "C" fn android_main(app: slint::android::AndroidApp) {
     slint::android::init(app).unwrap();
     let ui = AppWindow::new().unwrap();
-
-    // Handle logika kalkulator sederhana
     let ui_handle = ui.as_weak();
-    ui.on_calculate(move |val| {
+
+    // Logika Hitung Otomatis
+    ui.on_process_logic(move |formula| {
         let ui = ui_handle.unwrap();
-        let current_text = ui.get_calc_display();
         
-        // Logika: Jika tombol "=" ditekan (diwakili input kosong atau simbol tertentu)
-        // Di sini kita cuma buat append teks dulu sebagai bukti Rust bekerja
-        let new_text = format!("{}{}", current_text, val);
-        ui.set_calc_display(new_text.into());
+        // Bersihkan input dari karakter aneh
+        let clean_formula = formula.trim();
+        
+        if clean_formula.is_empty() {
+            ui.set_result_text("0".into());
+            return;
+        }
+
+        // Evaluasi string matematika (misal: "1+2*3")
+        match eval(clean_formula) {
+            Ok(res) => ui.set_result_text(format!("{}", res).into()),
+            Err(_) => ui.set_result_text("Format Salah".into()),
+        }
     });
 
     ui.run().unwrap();

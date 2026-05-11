@@ -1,106 +1,95 @@
-import { ScrollView, VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
+import { ScrollView, VerticalBox, HorizontalBox, LineEdit, Button } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    title: "Vuzt Premium";
+    title: "Vuzt Engine";
     background: #FFFFFF;
-    width: 400px;
-    height: 800px;
+    width: 100%;
+    height: 100%;
 
-    in-out property <string> current-view: "home";
-    in-out property <string> calc-display: "0";
+    in-out property <string> result-text: "0";
+    callback process-logic(string);
 
-    // Fungsi yang akan dipanggil oleh Rust
-    callback calculate(string);
+    VerticalBox {
+        padding: 0;
+        spacing: 0;
 
-    // --- HEADER ---
-    Rectangle {
-        y: 0; z: 100;
-        width: 100%; height: 120px;
-        background: #FFFFFF;
-
-        Text {
-            x: 25px; y: 65px;
-            text: root.current-view == "home" ? "Overview" : "Calculator";
-            font-size: 32px;
-            font-weight: 800;
-            color: #1C1C1E;
+        // --- DARK STATUS BAR AREA ---
+        Rectangle {
+            height: 40px;
+            background: #000000;
+            Text {
+                text: "VUZT SYSTEM ACTIVE";
+                color: #00FF00;
+                font-size: 10px;
+                font-family: "monospace";
+                horizontal-alignment: center;
+            }
         }
 
-        if (root.current-view != "home") : Rectangle {
-            x: parent.width - 65px; y: 65px;
-            width: 40px; height: 40px; border-radius: 20px;
-            background: #F2F2F7;
-            Text { text: "✕"; font-size: 16px; color: #1C1C1E; horizontal-alignment: center; }
-            TouchArea { clicked => { root.current-view = "home" } }
+        // --- HEADER ---
+        Rectangle {
+            height: 100px;
+            background: #FFFFFF;
+            Text {
+                x: 25px; y: 40px;
+                text: "Rust Processor";
+                font-size: 28px;
+                font-weight: 900;
+                color: #1C1C1E;
+            }
         }
-    }
 
-    ScrollView {
-        y: 120px;
-        height: parent.height - 120px;
-        viewport-height: content-layout.preferred-height;
+        VerticalBox {
+            padding: 25px;
+            spacing: 20px;
 
-        content-layout := VerticalBox {
-            padding: 25px; spacing: 30px; alignment: start;
-
-            if (root.current-view == "home") : VerticalBox {
-                spacing: 30px; padding: 0;
-
-                Rectangle {
-                    height: 200px; background: #1C1C1E; border-radius: 28px;
-                    VerticalBox {
-                        padding: 30px; alignment: space-around;
-                        Text { text: "Total Balance"; color: #8E8E93; font-size: 14px; }
-                        Text { text: "$ 12,450.00"; color: white; font-size: 36px; font-weight: 800; }
-                        TouchArea { clicked => { root.current-view = "calc" } }
-                    }
-                }
-
-                Text { text: "Quick Actions"; color: #1C1C1E; font-size: 20px; font-weight: 800; }
-                
-                HorizontalBox {
-                    padding: 0; spacing: 20px; height: 120px;
-                    Rectangle {
-                        background: #F9F9F9; border-radius: 24px;
-                        Text { text: "🧮 Calc"; font-weight: 700; color: #1C1C1E; }
-                        TouchArea { clicked => { root.current-view = "calc" } }
-                    }
-                }
+            // --- INPUT AREA (Trigger Android Keyboard) ---
+            Text { text: "Input Formula:"; color: #8E8E93; font-weight: 600; }
+            
+            input_box := LineEdit {
+                font-size: 20px;
+                placeholder-text: "Contoh: 150 + 25 * 4";
+                height: 60px;
+                // Setiap kali ngetik, Rust langsung hitung
+                edited => { root.process-logic(self.text) }
             }
 
-            if (root.current-view == "calc") : VerticalBox {
-                padding: 0; spacing: 20px;
+            // --- RESULT AREA (Modern Card) ---
+            Rectangle {
+                height: 150px;
+                background: #1C1C1E;
+                border-radius: 24px;
                 
-                // Display Kalkulator
-                Rectangle {
-                    height: 120px; background: #F2F2F7; border-radius: 24px;
+                VerticalBox {
+                    padding: 25px;
+                    alignment: center;
                     Text { 
-                        text: root.calc-display; 
-                        color: #1C1C1E; font-size: 40px; font-weight: 800;
-                        padding-right: 20px; horizontal-alignment: right;
+                        text: "RESULT"; 
+                        color: #8E8E93; 
+                        font-size: 12px; 
+                        font-weight: 800;
+                        horizontal-alignment: center;
                     }
-                }
-
-                // Grid Tombol Sederhana
-                HorizontalBox {
-                    padding: 0; spacing: 10px;
-                    Rectangle { 
-                        height: 60px; background: #1C1C1E; border-radius: 15px;
-                        Text { text: "1"; color: white; font-weight: 700; }
-                        TouchArea { clicked => { root.calculate("1") } }
-                    }
-                    Rectangle { 
-                        height: 60px; background: #1C1C1E; border-radius: 15px;
-                        Text { text: "2"; color: white; font-weight: 700; }
-                        TouchArea { clicked => { root.calculate("2") } }
-                    }
-                    Rectangle { 
-                        height: 60px; background: #1C1C1E; border-radius: 15px;
-                        Text { text: "C"; color: #FF3B30; font-weight: 700; }
-                        TouchArea { clicked => { root.calc-display = "0" } }
+                    Text { 
+                        text: root.result-text; 
+                        color: #00FF00; 
+                        font-size: 45px; 
+                        font-weight: 900;
+                        horizontal-alignment: center;
                     }
                 }
             }
+
+            Button {
+                text: "CLEAR";
+                clicked => { 
+                    input_box.text = "";
+                    root.result-text = "0";
+                }
+            }
         }
+        
+        // Filler bawah
+        Rectangle { vertical-stretch: 1; }
     }
 }
